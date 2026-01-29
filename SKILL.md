@@ -28,14 +28,22 @@ npx expo start --clear
 
 Install specialized skills as needed:
 
-| Need | Command |
-|------|---------|
-| Native UI patterns + navigation | `./scripts/meta-extend ui` |
-| UI component library (HeroUI) | `./scripts/meta-extend heroui` |
-| Build + distribute dev clients | `./scripts/meta-extend dev-client` |
-| Performance + best practices | `./scripts/meta-extend perf` |
+| Need | Command | Skill Name |
+|------|---------|------------|
+| Native UI patterns + navigation | `./scripts/meta-extend ui` | `building-native-ui` |
+| UI component library (HeroUI) | `./scripts/meta-extend heroui` | `heroui-native` |
+| Build + distribute dev clients | `./scripts/meta-extend dev-client` | `expo-dev-client` |
+| Performance + best practices | `./scripts/meta-extend best-practices` | `react-native-skills` |
 
 Run `./scripts/meta-extend` to see all options.
+
+## Routing Logic
+
+Before offering to install an extension, check if it's already installed:
+
+1. Check if `~/.claude/skills/<skill-name>` exists (symlink or directory)
+2. If **installed** → Tell the user: "The [skill-name] skill is already available. Invoking it now." Then use the Skill tool to invoke it directly (e.g., `/building-native-ui`)
+3. If **not installed** → Offer to install via `./scripts/meta-extend <extension>`
 
 ## Daily Commands
 
