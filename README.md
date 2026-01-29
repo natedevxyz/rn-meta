@@ -1,54 +1,66 @@
-# React Native Meta Stack (`rn-meta`)
+# rn-meta
 
-A Claude Code skill (and standalone script) that bootstraps a production-ready Expo app with:
+Opinionated React Native stack: Expo Router + TypeScript + Expo Dev Client + Uniwind/Tailwind v4.
 
-- Expo Router + TypeScript (default template)
-- Expo Dev Client (not Expo Go)
-- Uniwind + Tailwind v4, wired correctly
+This repo is intended to be installed as a Claude Code skill, but you can also clone it and run the scripts directly.
 
-## Structure
-
-- `SKILL.md` - Skill entrypoint (what Claude Code reads)
-- `scripts/meta-start` - Bootstrap script (creates a brand-new Expo app)
-- `reference/starting.md` - Manual fallback steps + common gotchas
-
-## Usage
-
-### From the terminal
-
-Prereqs: `node`, `pnpm`, and for iOS Simulator: Xcode + Command Line Tools.
+## Quick Start
 
 ```bash
-./scripts/meta-start <app-name>
-cd <app-name>
-npx expo run:ios
+# Install the skill (replace with your git URL / local path)
+npx skills add <your-repo>/rn-meta --global --agent claude-code
+
+# Create a new project
+./scripts/meta-start my-app
+./scripts/meta-run my-app
 npx expo start --clear
 ```
 
-If the script fails, follow [`reference/starting.md`](reference/starting.md).
+## What’s Included
 
-### In Claude Code
+| Script | Purpose |
+|--------|---------|
+| `scripts/meta-start` | Scaffold a new Expo project with the full stack |
+| `scripts/meta-run` | Build + run (auto-detects iOS/Android) |
+| `scripts/meta-doctor` | Diagnose configuration issues |
+| `scripts/meta-extend` | Install companion extensions (UI, HeroUI, dev-client, perf) |
 
-Clone (or copy) this repo into your Claude skills directory so the folder contains `SKILL.md`.
+## Extensions
 
-Typical locations:
+```bash
+./scripts/meta-extend ui          # Native UI patterns
+./scripts/meta-extend heroui      # HeroUI component library
+./scripts/meta-extend dev-client  # EAS builds + TestFlight
+./scripts/meta-extend perf        # Performance best practices
+./scripts/meta-extend all         # Everything
+```
 
-- `~/.claude/skills/rn-meta/` (user-level)
-- `.claude/skills/rn-meta/` (project-level, if supported by your setup)
+Run `./scripts/meta-extend` to see all options.
 
-Then invoke the skill with an app name (Claude will prompt based on `argument-hint: <app-name>`).
+## References
 
-## What It Generates
+- `references/starting.md` — what to do when setup fails mid-way
+- `references/gotchas.md` — common issues and fixes
 
-The script creates a fresh Expo app and then:
+## Troubleshooting
 
-- Adds `global.css` with Tailwind v4 + Uniwind imports
-- Writes `metro.config.js` using `uniwind/metro`
-- Ensures `app/_layout.tsx` imports `../global.css`
-- Adds a small Uniwind proof element (a `className`) so you can confirm styling works
+```bash
+./scripts/meta-doctor ./my-app
+```
 
-## Common Gotchas
+If the doctor passes but things are still broken, start with `references/gotchas.md`.
 
-- Metro import must be `uniwind/metro` (not `uniwind/config`)
-- `global.css` import must be inside Router code (`app/_layout.tsx`)
-- Restart Metro after config changes: `npx expo start --clear`
+## Stack
+
+- [Expo Router](https://docs.expo.dev/router/introduction/) — file-based routing
+- [Expo Dev Client](https://docs.expo.dev/develop/development-builds/introduction/) — custom native runtime
+- [Uniwind](https://github.com/nickshanks347/uniwind) — Tailwind utilities for React Native
+- [Tailwind CSS v4](https://tailwindcss.com/) — utility-first CSS
+
+## License
+
+MIT (see `LICENSE`).
+
+## Notes
+
+`SKILL.md` is the Claude Code-facing entrypoint (name/description + agent instructions). `README.md` is for humans browsing the repo.
