@@ -23,16 +23,25 @@ npx expo start --clear
 | `scripts/meta-start` | Scaffold a new Expo project with the full stack |
 | `scripts/meta-run` | Build + run (auto-detects iOS/Android) |
 | `scripts/meta-doctor` | Diagnose configuration issues |
-| `scripts/meta-extend` | Install companion extensions (UI, HeroUI, dev-client, perf) |
+| `scripts/meta-extend` | Install companion extensions (UI, HeroUI, dev-client, best-practices) |
 
 ## Extensions
 
+This skill can install companion skills from other authors:
+
+| Extension | Skill | Source |
+|-----------|-------|--------|
+| `ui` | Native UI patterns | [expo/skills](https://github.com/expo/skills) (`building-native-ui`) |
+| `heroui` | HeroUI component library | [heroui-inc/heroui](https://github.com/heroui-inc/heroui) (`heroui-native`) |
+| `dev-client` | EAS builds + TestFlight | [expo/skills](https://github.com/expo/skills) (`expo-dev-client`) |
+| `best-practices` | Performance best practices | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) (`react-native-skills`) |
+
 ```bash
-./scripts/meta-extend ui          # Native UI patterns
-./scripts/meta-extend heroui      # HeroUI component library
-./scripts/meta-extend dev-client  # EAS builds + TestFlight
-./scripts/meta-extend perf        # Performance best practices
-./scripts/meta-extend all         # Everything
+./scripts/meta-extend ui              # Native UI patterns
+./scripts/meta-extend heroui          # HeroUI component library
+./scripts/meta-extend dev-client      # EAS builds + TestFlight
+./scripts/meta-extend best-practices  # Performance best practices
+./scripts/meta-extend all             # Everything
 ```
 
 Run `./scripts/meta-extend` to see all options.

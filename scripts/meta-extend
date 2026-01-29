@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SKILLS_DIR="$HOME/.claude/skills"
+
+is_skill_installed() {
+  local skill="$1"
+  [[ -L "$SKILLS_DIR/$skill" || -d "$SKILLS_DIR/$skill" ]]
+}
+
 EXTENSION="${1:-}"
 
 if [[ -z "$EXTENSION" ]]; then
@@ -10,7 +17,7 @@ if [[ -z "$EXTENSION" ]]; then
   echo "  ui          Native UI patterns, navigation, animations (recommended)"
   echo "  heroui      HeroUI Native component library (Uniwind/Tailwind v4)"
   echo "  dev-client  Build + distribute dev clients via EAS"
-  echo "  perf        React Native performance + best practices"
+  echo "  best-practices  React Native performance + best practices"
   echo "  all         Install all extensions"
   exit 1
 fi
@@ -20,6 +27,10 @@ install_skill() {
   local skill="${2:-}"
 
   if [[ -n "$skill" ]]; then
+    if is_skill_installed "$skill"; then
+      echo "✓ $skill already installed, skipping"
+      return 0
+    fi
     echo "Installing $skill from $source..."
     npx --yes skills add "$source" --skill "$skill" --global --yes --agent claude-code
   else
@@ -41,7 +52,7 @@ case "$EXTENSION" in
     # Build + distribute dev clients via EAS
     install_skill "expo/skills" "expo-dev-client"
     ;;
-  perf)
+  best-practices)
     # React Native performance + best practices from vercel-labs
     install_skill "vercel-labs/agent-skills" "react-native-skills"
     ;;
@@ -55,7 +66,7 @@ case "$EXTENSION" in
   *)
     echo "❌ Unknown extension: $EXTENSION"
     echo ""
-    echo "Available: ui, heroui, dev-client, perf, all"
+    echo "Available: ui, heroui, dev-client, best-practices, all"
     exit 1
     ;;
 esac
