@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+APP_NAME="${1:-}"
+if [[ -z "$APP_NAME" ]]; then
+  echo "Usage: ./scripts/meta-start <app-name>"
+  exit 1
+fi
+
+if [[ -e "$APP_NAME" ]]; then
+  echo "Error: '$APP_NAME' already exists."
+  exit 1
+fi
+
+echo "➡️  Creating Expo app: $APP_NAME"
+pnpm create expo-app@latest "$APP_NAME" --template default
+
+cd "$APP_NAME"
+
+echo "➡️  Installing Expo Dev Client"
+npx expo install expo-dev-client
+
+echo "➡️  Installing Uniwind + Tailwind v4"
+pnpm add uniwind tailwindcss
+
+echo "➡️  Writing global.css"
+cat > global.css <<'CSS'
+@import 'tailwindcss';
+@import 'uniwind';
+CSS
+
+echo "➡️  Writing metro.config.js (Uniwind)"
+cat > metro.config.js <<'JS'
+const { getDefaultConfig } = require('expo/metro-config');
+const { withUniwindConfig } = require('uniwind/metro');
+
+const config = getDefaultConfig(__dirname);
+
+module.exports = withUniwindConfig(config, {
+  cssEntryFile: './global.css',
+});
+JS
+
+echo "➡️  Patching app/_layout.tsx to import global.css"
+LAYOUT="app/_layout.tsx"
+if [[ -f "$LAYOUT" ]]; then
+  if ! grep -q "global.css" "$LAYOUT"; then
+    tmpfile="$(mktemp)"
+    echo "import '../global.css';" > "$tmpfile"
+    cat "$LAYOUT" >> "$tmpfile"
+    mv "$tmpfile" "$LAYOUT"
+  fi
+else
+  echo "Warning: $LAYOUT not found. Add: import '../global.css'; at the top of your Router entry file."
+fi
+
+echo "➡️  Patching app/(tabs)/index.tsx to demo Uniwind"
+INDEX="app/(tabs)/index.tsx"
+if [[ -f "$INDEX" ]]; then
+  # Add Text to the react-native import
+  if ! grep -q ", Text " "$INDEX"; then
+    sed -i '' "s/StyleSheet }/StyleSheet, Text }/" "$INDEX"
+  fi
+  # Add a green Text element between Welcome and Step 1 (match only Step 1)
+  sed -i '' 's/<ThemedText type="subtitle">Step 1: Try it/<Text className="text-green-500 text-xl">Uniwind works!<\/Text>\
+        <ThemedText type="subtitle">Step 1: Try it/' "$INDEX"
+fi
+
+echo ""
+echo "✅ Done."
+echo ""
+echo "Next:"
+echo "  1) Build the dev client:"
+echo "     cd $APP_NAME && npx expo run:ios"
+echo ""
+echo "  2) Start Metro (clear cache after config changes):"
+echo "     npx expo start --clear"
+echo ""
+echo "If the Simulator doesn't open:"
+echo "  open -a Simulator"
+echo "  npx expo run:ios --device"
