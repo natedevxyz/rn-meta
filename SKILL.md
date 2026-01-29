@@ -5,51 +5,40 @@ description: Bootstrap a new Expo app with TypeScript, Expo Router, Expo Dev Cli
 
 # React Native Meta Stack
 
-Bootstrap a production-ready Expo app with:
-- Expo Router + TypeScript
-- Expo Dev Client (not Expo Go)
-- Uniwind + Tailwind v4
+Expo Router + TypeScript + Dev Client + Uniwind/Tailwind v4.
+
+## Decision Tree
+
+| Situation | Action |
+|-----------|--------|
+| New project | Run `./scripts/meta-start <name>` |
+| Verify setup works | Run `./scripts/meta-doctor <path>` |
+| Something broke | Run `meta-doctor` first |
+| Doctor passes but still broken | Read [reference/gotchas.md](reference/gotchas.md) |
+| Script failed mid-setup | Read [reference/starting.md](reference/starting.md) |
 
 ## New Project
 
 ```bash
 ./scripts/meta-start $ARGUMENTS
-cd $ARGUMENTS
-npx expo run:ios
+./scripts/meta-run $ARGUMENTS
 npx expo start --clear
 ```
 
-## Diagnose Issues
-
-Run the doctor script from the skill directory, passing the project path:
+## Diagnose
 
 ```bash
 ./scripts/meta-doctor /path/to/project
 ```
 
-Or run from inside the project:
-
-```bash
-/path/to/skill/scripts/meta-doctor .
-```
-
-The doctor checks:
-- Expo project structure
-- expo-dev-client installed
-- Uniwind + Tailwind installed
-- global.css with correct imports
-- metro.config.js using uniwind/metro (not uniwind/config)
-- app/_layout.tsx importing global.css
-- Conflicting packages (nativewind)
-
 Use `--json` for machine-readable output.
 
-## Workflow
+## Daily Commands
 
-1. Create project: `meta-start my-app`
-2. Verify setup: `meta-doctor my-app`
-3. If something breaks later: run `meta-doctor` again
+```bash
+./scripts/meta-run <path>   # Build + run (auto-detects iOS/Android)
+npx expo start --clear      # Dev server + clear cache (after config changes)
+npx expo start              # Dev server only (JS changes, no new packages)
+```
 
-## Manual Setup
-
-If scripts fail, see [reference/starting.md](reference/starting.md) for step-by-step instructions.
+Pass `android` as second arg to force Android when both platforms available.
