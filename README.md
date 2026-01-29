@@ -7,13 +7,8 @@ This repo is intended to be installed as a Claude Code skill, but you can also c
 ## Quick Start
 
 ```bash
-# Install the skill (replace with your git URL / local path)
+# Install the skill
 npx skills add natedevxyz/rn-meta --global --agent claude-code
-
-# Create a new project
-./scripts/meta-start my-app
-./scripts/meta-run my-app
-npx expo start --clear
 ```
 
 ## What’s Included
