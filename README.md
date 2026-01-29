@@ -8,7 +8,7 @@ This repo is intended to be installed as a Claude Code skill, but you can also c
 
 ```bash
 # Install the skill (replace with your git URL / local path)
-npx skills add <your-repo>/rn-meta --global --agent claude-code
+npx skills add natedevxyz/rn-meta --global --agent claude-code
 
 # Create a new project
 ./scripts/meta-start my-app
@@ -63,7 +63,7 @@ If the doctor passes but things are still broken, start with `references/gotchas
 
 - [Expo Router](https://docs.expo.dev/router/introduction/) — file-based routing
 - [Expo Dev Client](https://docs.expo.dev/develop/development-builds/introduction/) — custom native runtime
-- [Uniwind](https://github.com/nickshanks347/uniwind) — Tailwind utilities for React Native
+- [Uniwind](https://uniwind.dev/) — Tailwind utilities for React Native
 - [Tailwind CSS v4](https://tailwindcss.com/) — utility-first CSS
 
 ## License
