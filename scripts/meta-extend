@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+EXTENSION="${1:-}"
+
+if [[ -z "$EXTENSION" ]]; then
+  echo "Usage: ./scripts/meta-extend <extension>"
+  echo ""
+  echo "Available extensions:"
+  echo "  ui          Native UI patterns, navigation, animations (recommended)"
+  echo "  heroui      HeroUI Native component library (Uniwind/Tailwind v4)"
+  echo "  dev-client  Build + distribute dev clients via EAS"
+  echo "  perf        React Native performance + best practices"
+  echo "  all         Install all extensions"
+  exit 1
+fi
+
+install_skill() {
+  local source="$1"
+  local skill="${2:-}"
+
+  if [[ -n "$skill" ]]; then
+    echo "Installing $skill from $source..."
+    npx --yes skills add "$source" --skill "$skill" --global --yes --agent claude-code
+  else
+    echo "Installing from $source..."
+    npx --yes skills add "$source" --global --yes --agent claude-code
+  fi
+}
+
+case "$EXTENSION" in
+  ui)
+    # Expo native UI patterns from expo/skills
+    install_skill "expo/skills" "building-native-ui"
+    ;;
+  heroui)
+    # HeroUI Native components (Uniwind/Tailwind v4)
+    install_skill "heroui-inc/heroui" "heroui-native"
+    ;;
+  dev-client)
+    # Build + distribute dev clients via EAS
+    install_skill "expo/skills" "expo-dev-client"
+    ;;
+  perf)
+    # React Native performance + best practices from vercel-labs
+    install_skill "vercel-labs/agent-skills" "react-native-skills"
+    ;;
+  all)
+    echo "Installing all extensions..."
+    install_skill "expo/skills" "building-native-ui"
+    install_skill "heroui-inc/heroui" "heroui-native"
+    install_skill "expo/skills" "expo-dev-client"
+    install_skill "vercel-labs/agent-skills" "react-native-skills"
+    ;;
+  *)
+    echo "❌ Unknown extension: $EXTENSION"
+    echo ""
+    echo "Available: ui, heroui, dev-client, perf, all"
+    exit 1
+    ;;
+esac
+
+echo ""
+echo "✅ Installed: $EXTENSION"
+echo ""
+echo "Restart your Claude Code session to use the new skill."

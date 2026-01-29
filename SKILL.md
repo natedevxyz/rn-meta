@@ -1,37 +1,41 @@
 ---
 name: rn-meta
-description: Bootstrap a new Expo app with TypeScript, Expo Router, Expo Dev Client, and Uniwind + Tailwind v4. Use when creating a new React Native/Expo project or when the user wants to start a mobile app. Also use when diagnosing or fixing issues with an existing Meta stack project.
+description: Bootstrap and develop Expo apps with TypeScript, Expo Router, Expo Dev Client, and Uniwind/Tailwind v4. Use when creating a new React Native/Expo project, building mobile app UI, or diagnosing issues. Also triggers for UI component libraries, EAS builds, dev client distribution, TestFlight, and React Native performance optimization—routes to specialized extensions.
 ---
 
 # React Native Meta Stack
 
 Expo Router + TypeScript + Dev Client + Uniwind/Tailwind v4.
 
+## New Project
+
+```bash
+./scripts/meta-start <name>
+./scripts/meta-run <name>
+npx expo start --clear
+```
+
 ## Decision Tree
 
 | Situation | Action |
 |-----------|--------|
-| New project | Run `./scripts/meta-start <name>` |
-| Verify setup works | Run `./scripts/meta-doctor <path>` |
+| Verify setup works | `./scripts/meta-doctor <path>` |
 | Something broke | Run `meta-doctor` first |
-| Doctor passes but still broken | Read [reference/gotchas.md](reference/gotchas.md) |
-| Script failed mid-setup | Read [reference/starting.md](reference/starting.md) |
+| Doctor passes but still broken | Read [references/gotchas.md](references/gotchas.md) |
+| Script failed mid-setup | Read [references/starting.md](references/starting.md) |
 
-## New Project
+## Extensions
 
-```bash
-./scripts/meta-start $ARGUMENTS
-./scripts/meta-run $ARGUMENTS
-npx expo start --clear
-```
+Install specialized skills as needed:
 
-## Diagnose
+| Need | Command |
+|------|---------|
+| Native UI patterns + navigation | `./scripts/meta-extend ui` |
+| UI component library (HeroUI) | `./scripts/meta-extend heroui` |
+| Build + distribute dev clients | `./scripts/meta-extend dev-client` |
+| Performance + best practices | `./scripts/meta-extend perf` |
 
-```bash
-./scripts/meta-doctor /path/to/project
-```
-
-Use `--json` for machine-readable output.
+Run `./scripts/meta-extend` to see all options.
 
 ## Daily Commands
 
