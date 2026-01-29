@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROJECT_PATH="${1:-.}"
+
+# Resolve to absolute path
+PROJECT_PATH="$(cd "$PROJECT_PATH" && pwd)"
+
+if [[ ! -f "$PROJECT_PATH/package.json" ]]; then
+  echo "❌ No package.json found at $PROJECT_PATH"
+  echo "   Usage: meta-run /path/to/expo-project"
+  exit 1
+fi
+
+# Detect available platforms
+has_ios=false
+has_android=false
+
+if xcrun simctl list devices &>/dev/null; then
+  has_ios=true
+fi
+
+if command -v emulator &>/dev/null || [[ -n "${ANDROID_HOME:-}" && -x "$ANDROID_HOME/emulator/emulator" ]]; then
+  has_android=true
+fi
+
+# Determine which platform to use
+platform=""
+
+if $has_ios && $has_android; then
+  # Both available - default to iOS, allow override
+  if [[ "${2:-}" == "android" ]]; then
+    platform="android"
+  else
+    platform="ios"
+  fi
+elif $has_ios; then
+  platform="ios"
+elif $has_android; then
+  platform="android"
+else
+  echo "❌ No platform available"
+  echo ""
+  echo "   iOS: Install Xcode and Simulator"
+  echo "   Android: Install Android Studio and set ANDROID_HOME"
+  exit 1
+fi
+
+echo "➡️  Building for $platform"
+cd "$PROJECT_PATH"
+npx expo run:$platform

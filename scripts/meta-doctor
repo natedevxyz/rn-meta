@@ -1,0 +1,237 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const path = require('path');
+
+// ANSI colors
+const GREEN = '\x1b[32m';
+const YELLOW = '\x1b[33m';
+const RED = '\x1b[31m';
+const RESET = '\x1b[0m';
+const BOLD = '\x1b[1m';
+
+const PASS = `${GREEN}✅${RESET}`;
+const WARN = `${YELLOW}⚠️${RESET}`;
+const FAIL = `${RED}❌${RESET}`;
+
+// Parse args
+const args = process.argv.slice(2);
+const jsonOutput = args.includes('--json');
+const projectPath = args.find(a => !a.startsWith('--')) || '.';
+
+const results = [];
+let hasErrors = false;
+let hasWarnings = false;
+
+function check(status, message, fix = null) {
+  if (status === 'fail') hasErrors = true;
+  if (status === 'warn') hasWarnings = true;
+  results.push({ status, message, fix });
+}
+
+function fileExists(filePath) {
+  return fs.existsSync(path.join(projectPath, filePath));
+}
+
+function readFile(filePath) {
+  try {
+    return fs.readFileSync(path.join(projectPath, filePath), 'utf8');
+  } catch {
+    return null;
+  }
+}
+
+function readJson(filePath) {
+  try {
+    return JSON.parse(readFile(filePath));
+  } catch {
+    return null;
+  }
+}
+
+// === CHECKS ===
+
+function checkExpoProject() {
+  const pkg = readJson('package.json');
+  if (!pkg) {
+    check('fail', 'No package.json found', `Run from an Expo project root, or pass the project path:\n  meta-doctor ./my-app`);
+    return null;
+  }
+  const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+  if (!deps.expo) {
+    check('fail', 'Not an Expo project (expo not in dependencies)', 'This tool is for Expo projects. Create one with:\n  pnpm create expo-app@latest my-app');
+    return null;
+  }
+  check('pass', 'Expo project detected');
+  return { pkg, deps };
+}
+
+function checkDevClient(deps) {
+  if (deps['expo-dev-client']) {
+    check('pass', 'expo-dev-client installed');
+  } else {
+    check('fail', 'expo-dev-client not installed (Meta stack uses dev client, not Expo Go)', 'Install it:\n  npx expo install expo-dev-client\n\nThen rebuild:\n  npx expo run:ios');
+  }
+}
+
+function checkGlobalCss() {
+  if (!fileExists('global.css')) {
+    check('fail', './global.css not found', `Create global.css in project root:\n\n  cat > global.css <<'CSS'\n@import 'tailwindcss';\n@import 'uniwind';\nCSS`);
+    return false;
+  }
+
+  const content = readFile('global.css');
+  const hasTailwind = content.includes("@import 'tailwindcss'") || content.includes('@import "tailwindcss"');
+  const hasUniwind = content.includes("@import 'uniwind'") || content.includes('@import "uniwind"');
+
+  if (!hasTailwind || !hasUniwind) {
+    const missing = [];
+    if (!hasTailwind) missing.push("@import 'tailwindcss';");
+    if (!hasUniwind) missing.push("@import 'uniwind';");
+    check('fail', `./global.css missing imports: ${missing.join(', ')}`, `Add to global.css:\n\n@import 'tailwindcss';\n@import 'uniwind';`);
+    return false;
+  }
+
+  check('pass', './global.css has correct imports');
+  return true;
+}
+
+function checkMetroConfig() {
+  if (!fileExists('metro.config.js')) {
+    check('fail', './metro.config.js not found', `Create metro.config.js:\n\n  cat > metro.config.js <<'JS'\nconst { getDefaultConfig } = require('expo/metro-config');\nconst { withUniwindConfig } = require('uniwind/metro');\n\nconst config = getDefaultConfig(__dirname);\n\nmodule.exports = withUniwindConfig(config, {\n  cssEntryFile: './global.css',\n});\nJS`);
+    return;
+  }
+
+  const content = readFile('metro.config.js');
+
+  // Check for wrong import
+  if (content.includes('uniwind/config')) {
+    check('fail', './metro.config.js uses uniwind/config (wrong)', `Change the import in metro.config.js:\n\n  // Wrong:\n  require('uniwind/config')\n\n  // Correct:\n  require('uniwind/metro')`);
+    return;
+  }
+
+  // Check for correct import
+  if (!content.includes('uniwind/metro')) {
+    check('fail', './metro.config.js missing uniwind/metro', `Add Uniwind to metro.config.js:\n\nconst { withUniwindConfig } = require('uniwind/metro');\n\n// Then wrap your config:\nmodule.exports = withUniwindConfig(config, {\n  cssEntryFile: './global.css',\n});`);
+    return;
+  }
+
+  // Check for cssEntryFile
+  if (!content.includes('cssEntryFile')) {
+    check('warn', './metro.config.js may be missing cssEntryFile option', `Ensure metro.config.js includes:\n\nmodule.exports = withUniwindConfig(config, {\n  cssEntryFile: './global.css',\n});`);
+    return;
+  }
+
+  check('pass', './metro.config.js configured for Uniwind');
+}
+
+function checkLayoutImport() {
+  const layoutPath = 'app/_layout.tsx';
+  if (!fileExists(layoutPath)) {
+    check('warn', './app/_layout.tsx not found (expected for Expo Router)', 'If using Expo Router, ensure app/_layout.tsx exists and imports global.css');
+    return;
+  }
+
+  const content = readFile(layoutPath);
+  if (!content.includes('global.css')) {
+    check('fail', './app/_layout.tsx does not import global.css', `Add at the top of app/_layout.tsx:\n\nimport '../global.css';`);
+    return;
+  }
+
+  check('pass', './app/_layout.tsx imports global.css');
+}
+
+function checkUniwindInstalled(deps) {
+  if (!deps.uniwind) {
+    check('fail', 'uniwind not installed', 'Install Uniwind:\n  pnpm add uniwind tailwindcss');
+    return false;
+  }
+  if (!deps.tailwindcss) {
+    check('fail', 'tailwindcss not installed (required by Uniwind)', 'Install Tailwind:\n  pnpm add tailwindcss');
+    return false;
+  }
+  check('pass', 'uniwind and tailwindcss installed');
+  return true;
+}
+
+function checkConflicts(deps) {
+  if (deps.nativewind) {
+    check('warn', 'nativewind is installed (may conflict with Uniwind)', 'Consider removing nativewind if using Uniwind:\n  pnpm remove nativewind');
+  }
+}
+
+function checkOptionalDeps(deps) {
+  // These are just informational, not errors
+  const recommended = [
+    { pkg: '@shopify/flash-list', desc: 'FlashList for performant lists' },
+    { pkg: '@react-native-async-storage/async-storage', desc: 'AsyncStorage' },
+  ];
+
+  // Don't clutter output with optional suggestions in v1
+  // Could add --verbose flag later
+}
+
+// === MAIN ===
+
+function run() {
+  const ctx = checkExpoProject();
+  if (!ctx) {
+    printResults();
+    process.exit(1);
+  }
+
+  const { deps } = ctx;
+
+  checkDevClient(deps);
+  checkUniwindInstalled(deps);
+  checkGlobalCss();
+  checkMetroConfig();
+  checkLayoutImport();
+  checkConflicts(deps);
+
+  printResults();
+
+  if (hasErrors) {
+    process.exit(1);
+  } else if (hasWarnings) {
+    process.exit(0);
+  } else {
+    process.exit(0);
+  }
+}
+
+function printResults() {
+  if (jsonOutput) {
+    console.log(JSON.stringify({ results, hasErrors, hasWarnings }, null, 2));
+    return;
+  }
+
+  console.log(`\n${BOLD}Meta Stack Doctor${RESET}\n`);
+  console.log(`Project: ${path.resolve(projectPath)}\n`);
+
+  for (const r of results) {
+    const icon = r.status === 'pass' ? PASS : r.status === 'warn' ? WARN : FAIL;
+    console.log(`${icon} ${r.message}`);
+    if (r.fix && r.status !== 'pass') {
+      console.log(`\n   ${BOLD}Fix:${RESET}`);
+      for (const line of r.fix.split('\n')) {
+        console.log(`   ${line}`);
+      }
+      console.log('');
+    }
+  }
+
+  console.log('─'.repeat(50));
+
+  if (hasErrors) {
+    console.log(`\n${RED}${BOLD}Some checks failed.${RESET} Fix the issues above and run again.\n`);
+  } else if (hasWarnings) {
+    console.log(`\n${YELLOW}${BOLD}All critical checks passed${RESET} with some warnings.\n`);
+  } else {
+    console.log(`\n${GREEN}${BOLD}All checks passed!${RESET} Your Meta stack is configured correctly.\n`);
+  }
+
+  console.log(`${BOLD}Reminder:${RESET} After any Metro config changes, restart with:\n  npx expo start --clear\n`);
+}
+
+run();
