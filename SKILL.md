@@ -1,6 +1,6 @@
 ---
 name: rn-meta
-description: Bootstrap and develop Expo apps with TypeScript, Expo Router, Expo Dev Client, and Uniwind/Tailwind v4. Use when creating a new React Native/Expo project, building mobile app UI, or diagnosing issues. Also triggers for UI component libraries, EAS builds, dev client distribution, TestFlight, and React Native performance optimization—routes to specialized extensions.
+description: Bootstrap and develop Expo apps with TypeScript, Expo Router, Expo Dev Client, and Uniwind/Tailwind v4. Use when creating a new React Native/Expo project, building mobile app UI, or diagnosing issues. Also triggers for UI component libraries, EAS builds, dev client distribution, TestFlight, React Native patterns/conventions, and performance profiling/optimization—routes to specialized extensions.
 ---
 
 # React Native Meta Stack
@@ -33,7 +33,8 @@ Install specialized skills as needed:
 | Native UI patterns + navigation | `./scripts/meta-extend ui` | `building-native-ui` |
 | UI component library (HeroUI) | `./scripts/meta-extend heroui` | `heroui-native` |
 | Build + distribute dev clients | `./scripts/meta-extend dev-client` | `expo-dev-client` |
-| Performance + best practices | `./scripts/meta-extend best-practices` | `react-native-skills` |
+| Patterns + conventions | `./scripts/meta-extend best-practices` | `react-native-skills` |
+| Performance profiling | `./scripts/meta-extend performance` | `react-native-best-practices` |
 
 Run `./scripts/meta-extend` to see all options.
 

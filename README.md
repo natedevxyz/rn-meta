@@ -18,7 +18,7 @@ npx skills add natedevxyz/rn-meta --global --agent claude-code
 | `scripts/meta-start` | Scaffold a new Expo project with the full stack |
 | `scripts/meta-run` | Build + run (auto-detects iOS/Android) |
 | `scripts/meta-doctor` | Diagnose configuration issues |
-| `scripts/meta-extend` | Install companion extensions (UI, HeroUI, dev-client, best-practices) |
+| `scripts/meta-extend` | Install companion extensions (UI, HeroUI, dev-client, best-practices, performance) |
 
 ## Extensions
 
@@ -29,13 +29,15 @@ This skill can install companion skills from other authors:
 | `ui` | Native UI patterns | [expo/skills](https://github.com/expo/skills) (`building-native-ui`) |
 | `heroui` | HeroUI component library | [heroui-inc/heroui](https://github.com/heroui-inc/heroui) (`heroui-native`) |
 | `dev-client` | EAS builds + TestFlight | [expo/skills](https://github.com/expo/skills) (`expo-dev-client`) |
-| `best-practices` | Performance best practices | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) (`react-native-skills`) |
+| `best-practices` | Patterns + conventions | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) (`react-native-skills`) |
+| `performance` | Profiling + optimization | [callstackincubator/agent-skills](https://github.com/callstackincubator/agent-skills) (`react-native-best-practices`) |
 
 ```bash
 ./scripts/meta-extend ui              # Native UI patterns
 ./scripts/meta-extend heroui          # HeroUI component library
 ./scripts/meta-extend dev-client      # EAS builds + TestFlight
-./scripts/meta-extend best-practices  # Performance best practices
+./scripts/meta-extend best-practices  # Patterns + conventions
+./scripts/meta-extend performance     # Profiling + optimization
 ./scripts/meta-extend all             # Everything
 ```
 

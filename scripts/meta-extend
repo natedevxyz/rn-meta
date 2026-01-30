@@ -14,11 +14,12 @@ if [[ -z "$EXTENSION" ]]; then
   echo "Usage: ./scripts/meta-extend <extension>"
   echo ""
   echo "Available extensions:"
-  echo "  ui          Native UI patterns, navigation, animations (recommended)"
-  echo "  heroui      HeroUI Native component library (Uniwind/Tailwind v4)"
-  echo "  dev-client  Build + distribute dev clients via EAS"
-  echo "  best-practices  React Native performance + best practices"
-  echo "  all         Install all extensions"
+  echo "  ui              Native UI patterns, navigation, animations (recommended)"
+  echo "  heroui          HeroUI Native component library (Uniwind/Tailwind v4)"
+  echo "  dev-client      Build + distribute dev clients via EAS"
+  echo "  best-practices  React Native patterns + conventions"
+  echo "  performance     Performance profiling + optimization (Callstack)"
+  echo "  all             Install all extensions"
   exit 1
 fi
 
@@ -53,8 +54,12 @@ case "$EXTENSION" in
     install_skill "expo/skills" "expo-dev-client"
     ;;
   best-practices)
-    # React Native performance + best practices from vercel-labs
+    # React Native patterns + conventions from vercel-labs
     install_skill "vercel-labs/agent-skills" "react-native-skills"
+    ;;
+  performance)
+    # Performance profiling + optimization from Callstack
+    install_skill "callstackincubator/agent-skills" "react-native-best-practices"
     ;;
   all)
     echo "Installing all extensions..."
@@ -62,11 +67,12 @@ case "$EXTENSION" in
     install_skill "heroui-inc/heroui" "heroui-native"
     install_skill "expo/skills" "expo-dev-client"
     install_skill "vercel-labs/agent-skills" "react-native-skills"
+    install_skill "callstackincubator/agent-skills" "react-native-best-practices"
     ;;
   *)
     echo "❌ Unknown extension: $EXTENSION"
     echo ""
-    echo "Available: ui, heroui, dev-client, best-practices, all"
+    echo "Available: ui, heroui, dev-client, best-practices, performance, all"
     exit 1
     ;;
 esac
