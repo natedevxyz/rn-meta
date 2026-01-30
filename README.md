@@ -1,14 +1,52 @@
 # rn-meta
 
-Opinionated React Native stack: Expo Router + TypeScript + Expo Dev Client + Uniwind/Tailwind v4.
+An opinionated React Native/Expo skill: a curated stack + library rules so you ship faster with fewer decisions.
 
-This repo is intended to be installed as a Claude Code skill, but you can also clone it and run the scripts directly.
+Stack: Expo Router + TypeScript + Expo Dev Client + Uniwind/Tailwind v4.
 
-## Quick Start
+## Install
 
 ```bash
-# Install the skill
 npx skills add natedevxyz/rn-meta --global --agent claude-code
+```
+
+## What You Get
+
+- A default stack that’s hard to mess up (routing, styling, state, storage, data fetching).
+- One source of truth for libraries: approved picks + setup examples.
+- Scripts to scaffold, run, and diagnose projects.
+- Optional “extensions” you can install for UI patterns, HeroUI, dev-client workflows, best practices, and performance.
+
+## Approved Libraries (TL;DR)
+
+Full details (behavioral notes + code examples): [references/libraries.md](references/libraries.md)
+
+| Category | Use |
+|---------|-----|
+| Styling | `uniwind` |
+| Navigation | `expo-router`, `NativeTabs`, `react-native-bottom-tabs` (fallback) |
+| Lists | `@legendapp/list`, `FlatList` (small lists) |
+| State Management | `zustand` + MMKV persist, React built-ins |
+| Data Fetching | `@tanstack/react-query` + persist + `axios` |
+| Storage | `react-native-mmkv`, `expo-secure-store` (sensitive) |
+| Forms & Inputs | `react-hook-form` + `zod`, `react-native-keyboard-controller` |
+| Toasts | `sonner-native` |
+| Animations | `@shopify/react-native-skia` (Skottie) |
+| Bottom Sheets | Expo Router `formSheet` (iOS), `@gorhom/bottom-sheet` (cross-platform) |
+| Authentication | `@supabase/supabase-js` (anonymous first), `expo-apple-authentication`, Supabase OAuth (Google) |
+| Camera | `react-native-vision-camera` |
+| Subscriptions | `react-native-purchases` (RevenueCat) |
+| Analytics | `posthog-react-native` |
+| Images | `expo-image` |
+| Error Monitoring | `@sentry/react-native` |
+| Push Notifications | `expo-notifications` |
+
+## Quick Start (New Project)
+
+```bash
+./scripts/meta-start <app-name>
+./scripts/meta-run <app-name>
+npx expo start --clear
 ```
 
 ## What’s Included
@@ -43,18 +81,16 @@ This skill can install companion skills from other authors:
 
 Run `./scripts/meta-extend` to see all options.
 
-## References
-
-- `references/starting.md` — what to do when setup fails mid-way
-- `references/gotchas.md` — common issues and fixes
-
 ## Troubleshooting
 
 ```bash
 ./scripts/meta-doctor ./my-app
 ```
 
-If the doctor passes but things are still broken, start with `references/gotchas.md`.
+If the doctor passes but things are still broken:
+
+- Check [references/gotchas.md](references/gotchas.md) (runtime issues doctor can’t detect)
+- If `meta-start` failed mid-way: [references/starting.md](references/starting.md)
 
 ## Stack
 
@@ -63,10 +99,16 @@ If the doctor passes but things are still broken, start with `references/gotchas
 - [Uniwind](https://uniwind.dev/) — Tailwind utilities for React Native
 - [Tailwind CSS v4](https://tailwindcss.com/) — utility-first CSS
 
+## Claude Code Fallback References
+
+- [references/libraries.md](references/libraries.md) — the library rules + examples
+- [references/gotchas.md](references/gotchas.md) — issues + fixes
+- [references/starting.md](references/starting.md) — manual setup if scripts fail
+
 ## License
 
 MIT (see `LICENSE`).
 
 ## Notes
 
-`SKILL.md` is the Claude Code-facing entrypoint (name/description + agent instructions). `README.md` is for humans browsing the repo.
+`SKILL.md` is the Claude Code-facing entrypoint (name/description + agent instructions). `README.md` is for repo visitors.

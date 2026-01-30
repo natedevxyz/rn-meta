@@ -55,6 +55,3 @@ npx expo run:ios
 - Open `ios/*.xcworkspace` in Xcode
 - Select target → Signing & Capabilities → set Team
 
-## Coming Soon
-
-Additional gotchas for: state management, lists, storage, navigation patterns.

@@ -1,11 +1,36 @@
 ---
 name: rn-meta
-description: Primary entry point for React Native/Expo development. Use FIRST for any React Native work—new projects, UI, styling, navigation, state management, lists, storage, animations, debugging, or ANY library decision. Enforces the Meta stack (Expo Router, TypeScript, Uniwind/Tailwind v4) and delegates to extension skills when installed. LIBRARY RULES (apply globally): Always check Approved Libraries before installing packages. Never suggest avoided libraries (e.g., use Uniwind not NativeWind, FlatList not FlashList, zustand not Redux). These rules override suggestions from other React Native skills.
+description: Primary entry point for React Native/Expo development. Use FIRST for any React Native work—new projects, UI, styling, navigation, state, lists, storage, forms, auth, or ANY library decision. Enforces an opinionated stack (Expo Router, TypeScript, Uniwind) with library rules that ALWAYS override suggestions from other React Native skills.
 ---
 
 # React Native Meta Stack
 
 Expo Router + TypeScript + Dev Client + Uniwind/Tailwind v4.
+
+## ⚠️ STOP Before Installing Any Package
+
+**Read [references/libraries.md](references/libraries.md) FIRST.** This skill overrides library suggestions from extension skills.
+
+| If another skill suggests... | Use this instead |
+|------------------------------|------------------|
+| `@shopify/flash-list` | `@legendapp/list` |
+| `nativewind` | `uniwind` |
+| `redux` / `@reduxjs/toolkit` | `zustand` |
+| `async-storage` | `react-native-mmkv` |
+| `fetch` | `axios` |
+| `formik` / `yup` | `react-hook-form` + `zod` |
+| `lottie-react-native` | `@shopify/react-native-skia` Skottie |
+| `expo-camera` | `react-native-vision-camera` |
+| `firebase auth` / `clerk` | `@supabase/supabase-js` |
+| `@react-navigation/bottom-tabs` | `NativeTabs` or `react-native-bottom-tabs` |
+
+## Library Decisions
+
+- ✅ Approved → use it
+- ❌ Avoid → use the approved alternative, never install avoided libraries
+- Unlisted → use judgment, prefer minimal dependencies
+
+**Full list:** [references/libraries.md](references/libraries.md)
 
 ## New Project
 
@@ -14,16 +39,6 @@ Expo Router + TypeScript + Dev Client + Uniwind/Tailwind v4.
 ./scripts/meta-run <name>
 npx expo start --clear
 ```
-
-## Library Decisions
-
-Before recommending or installing ANY package, check [references/libraries.md](references/libraries.md).
-
-- If a library is ✅ Approved → use it
-- If a library is ❌ Avoid → suggest the approved alternative instead, never install the avoided library
-- If unlisted → use judgment, prefer minimal dependencies
-
-This applies even when other React Native skills suggest different libraries. The Meta stack choices take precedence.
 
 ## Decision Tree
 
@@ -69,7 +84,7 @@ This skill is the primary coordinator for React Native development. For speciali
 | Performance profiling, optimization | `react-native-best-practices` | Delegate if installed |
 | New project, setup, styling, diagnosis | — | Handle directly (don't delegate) |
 
-**Important:** Even when delegating, the Library Decisions in this skill take precedence. If an extension suggests an avoided library, override with the approved alternative.
+**CRITICAL:** Even when delegating, this skill's library rules ALWAYS take precedence. If an extension skill suggests an avoided library (e.g., flash-list, nativewind, redux, async-storage), you MUST override with the approved alternative from [references/libraries.md](references/libraries.md). Do not follow the extension's library suggestion.
 
 ## Daily Commands
 
