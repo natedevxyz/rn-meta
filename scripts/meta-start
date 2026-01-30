@@ -69,13 +69,51 @@ fi
 echo ""
 echo "✅ Done."
 echo ""
+
+# Check platform availability
+has_ios=false
+has_android=false
+
+if xcrun simctl list devices &>/dev/null; then
+  has_ios=true
+fi
+
+if command -v emulator &>/dev/null || [[ -n "${ANDROID_HOME:-}" && -x "$ANDROID_HOME/emulator/emulator" ]]; then
+  has_android=true
+fi
+
+if ! $has_ios && ! $has_android; then
+  echo "⚠️  Warning: No iOS Simulator or Android emulator detected"
+  echo ""
+  echo "   You can still develop, but won't be able to run the app until one is installed."
+  echo ""
+  echo "   iOS:"
+  echo "     1. Install Xcode from the App Store"
+  echo "     2. Open Xcode and install additional components"
+  echo "     3. Run: open -a Simulator"
+  echo ""
+  echo "   Android:"
+  echo "     1. Install Android Studio: https://developer.android.com/studio"
+  echo "     2. Set ANDROID_HOME environment variable"
+  echo "     3. Create an emulator in Android Studio → Virtual Device Manager"
+  echo ""
+fi
+
 echo "Next:"
 echo "  1) Build the dev client:"
-echo "     cd $APP_NAME && npx expo run:ios"
+if $has_ios; then
+  echo "     cd $APP_NAME && npx expo run:ios"
+elif $has_android; then
+  echo "     cd $APP_NAME && npx expo run:android"
+else
+  echo "     cd $APP_NAME && npx expo run:ios  # (after installing Xcode)"
+fi
 echo ""
 echo "  2) Start Metro (clear cache after config changes):"
 echo "     npx expo start --clear"
 echo ""
-echo "If the Simulator doesn't open:"
-echo "  open -a Simulator"
-echo "  npx expo run:ios --device"
+if $has_ios; then
+  echo "If the Simulator doesn't open:"
+  echo "  open -a Simulator"
+  echo "  npx expo run:ios --device"
+fi
