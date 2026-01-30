@@ -51,6 +51,46 @@ function readJson(filePath) {
 
 // === CHECKS ===
 
+function checkPlatformAvailable() {
+  let hasIos = false;
+  let hasAndroid = false;
+
+  // Check iOS Simulator
+  try {
+    require('child_process').execSync('xcrun simctl list devices', { stdio: 'ignore' });
+    hasIos = true;
+  } catch {}
+
+  // Check Android emulator
+  try {
+    const androidHome = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT;
+    if (androidHome) {
+      const fs = require('fs');
+      const emulatorPath = path.join(androidHome, 'emulator', 'emulator');
+      if (fs.existsSync(emulatorPath)) {
+        hasAndroid = true;
+      }
+    }
+    // Also check if emulator is in PATH
+    if (!hasAndroid) {
+      require('child_process').execSync('which emulator', { stdio: 'ignore' });
+      hasAndroid = true;
+    }
+  } catch {}
+
+  if (hasIos && hasAndroid) {
+    check('pass', 'iOS Simulator and Android emulator available');
+  } else if (hasIos) {
+    check('pass', 'iOS Simulator available');
+    check('warn', 'Android emulator not detected', 'To run on Android:\n  1. Install Android Studio: https://developer.android.com/studio\n  2. Set ANDROID_HOME environment variable\n  3. Create an emulator in Android Studio → Virtual Device Manager');
+  } else if (hasAndroid) {
+    check('pass', 'Android emulator available');
+    check('warn', 'iOS Simulator not detected', 'To run on iOS:\n  1. Install Xcode from the App Store\n  2. Open Xcode and install additional components\n  3. Run: open -a Simulator');
+  } else {
+    check('warn', 'No iOS Simulator or Android emulator detected', 'You need at least one platform to run the app:\n\n  iOS:\n    1. Install Xcode from the App Store\n    2. Open Xcode and install additional components\n    3. Run: open -a Simulator\n\n  Android:\n    1. Install Android Studio: https://developer.android.com/studio\n    2. Set ANDROID_HOME environment variable\n    3. Create an emulator in Android Studio → Virtual Device Manager');
+  }
+}
+
 function checkExpoProject() {
   const pkg = readJson('package.json');
   if (!pkg) {
@@ -174,6 +214,9 @@ function checkOptionalDeps(deps) {
 // === MAIN ===
 
 function run() {
+  // Check platform availability first (warnings only)
+  checkPlatformAvailable();
+
   const ctx = checkExpoProject();
   if (!ctx) {
     printResults();
