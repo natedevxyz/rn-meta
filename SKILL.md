@@ -1,6 +1,6 @@
 ---
 name: rn-meta
-description: Bootstrap and develop Expo apps with TypeScript, Expo Router, Expo Dev Client, and Uniwind/Tailwind v4. Use when creating a new React Native/Expo project, building mobile app UI, or diagnosing issues. Also triggers for UI component libraries, EAS builds, dev client distribution, TestFlight, React Native patterns/conventions, and performance profiling/optimization—routes to specialized extensions.
+description: Primary entry point for React Native/Expo development. Use FIRST for any React Native work—new projects, UI, styling, navigation, state management, lists, storage, animations, debugging, or ANY library decision. Enforces the Meta stack (Expo Router, TypeScript, Uniwind/Tailwind v4) and delegates to extension skills when installed. LIBRARY RULES (apply globally): Always check Approved Libraries before installing packages. Never suggest avoided libraries (e.g., use Uniwind not NativeWind, FlatList not FlashList, zustand not Redux). These rules override suggestions from other React Native skills.
 ---
 
 # React Native Meta Stack
@@ -15,6 +15,16 @@ Expo Router + TypeScript + Dev Client + Uniwind/Tailwind v4.
 npx expo start --clear
 ```
 
+## Library Decisions
+
+Before recommending or installing ANY package, check [references/libraries.md](references/libraries.md).
+
+- If a library is ✅ Approved → use it
+- If a library is ❌ Avoid → suggest the approved alternative instead, never install the avoided library
+- If unlisted → use judgment, prefer minimal dependencies
+
+This applies even when other React Native skills suggest different libraries. The Meta stack choices take precedence.
+
 ## Decision Tree
 
 | Situation | Action |
@@ -23,6 +33,7 @@ npx expo start --clear
 | Something broke | Run `meta-doctor` first |
 | Doctor passes but still broken | Read [references/gotchas.md](references/gotchas.md) |
 | Script failed mid-setup | Read [references/starting.md](references/starting.md) |
+| Need to add a package | Check [references/libraries.md](references/libraries.md) first |
 
 ## Extensions
 
@@ -40,11 +51,25 @@ Run `./scripts/meta-extend` to see all options.
 
 ## Routing Logic
 
-Before offering to install an extension, check if it's already installed:
+This skill is the primary coordinator for React Native development. For specialized tasks, delegate to extension skills when installed.
 
-1. Check if `~/.claude/skills/<skill-name>` exists (symlink or directory)
-2. If **installed** → Tell the user: "The [skill-name] skill is already available. Invoking it now." Then use the Skill tool to invoke it directly (e.g., `/building-native-ui`)
-3. If **not installed** → Offer to install via `./scripts/meta-extend <extension>`
+**Check before delegating:** Does `~/.claude/skills/<skill-name>` exist?
+
+- **If installed** → Invoke via Skill tool (e.g., `/building-native-ui`)
+- **If not installed** → Offer to install via `./scripts/meta-extend <extension>`
+
+### Delegation Rules
+
+| User Request | Check Skill | Action |
+|--------------|-------------|--------|
+| UI patterns, screens, animations | `building-native-ui` | Delegate if installed |
+| HeroUI components | `heroui-native` | Delegate if installed |
+| EAS builds, dev client, TestFlight | `expo-dev-client` | Delegate if installed |
+| Code patterns, conventions, architecture | `react-native-skills` | Delegate if installed |
+| Performance profiling, optimization | `react-native-best-practices` | Delegate if installed |
+| New project, setup, styling, diagnosis | — | Handle directly (don't delegate) |
+
+**Important:** Even when delegating, the Library Decisions in this skill take precedence. If an extension suggests an avoided library, override with the approved alternative.
 
 ## Daily Commands
 
