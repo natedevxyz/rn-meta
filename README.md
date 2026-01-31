@@ -31,7 +31,7 @@ Full details (behavioral notes + code examples): [references/libraries.md](refer
 | Storage | `react-native-mmkv`, `expo-secure-store` (sensitive) |
 | Forms & Inputs | `react-hook-form` + `zod`, `react-native-keyboard-controller` |
 | Toasts | `sonner-native` |
-| Animations | `@shopify/react-native-skia` (Skottie) |
+| Animations | `@shopify/react-native-skia` Skottie (Lottie), `react-native-reanimated` (gestures/transitions via `ui` extension) |
 | Bottom Sheets | Expo Router `formSheet` (iOS), `@gorhom/bottom-sheet` (cross-platform) |
 | Authentication | `@supabase/supabase-js` (anonymous first), `expo-apple-authentication`, Supabase OAuth (Google) |
 | Camera | `react-native-vision-camera` |
