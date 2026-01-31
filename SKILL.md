@@ -77,12 +77,13 @@ This skill is the primary coordinator for React Native development. For speciali
 
 | User Request | Check Skill | Action |
 |--------------|-------------|--------|
-| UI patterns, screens, animations | `building-native-ui` | Delegate if installed |
-| HeroUI components | `heroui-native` | Delegate if installed |
-| EAS builds, dev client, TestFlight | `expo-dev-client` | Delegate if installed |
-| Code patterns, conventions, architecture | `react-native-skills` | Delegate if installed |
-| Performance profiling, optimization | `react-native-best-practices` | Delegate if installed |
-| New project, setup, styling, diagnosis | — | Handle directly (don't delegate) |
+| UI patterns, screens, navigation | `building-native-ui` | Delegate if installed |
+| Gesture animations, transitions, layout animations | `building-native-ui` | Delegate if installed |
+| Buttons, cards, modals, component library | `heroui-native` | Delegate if installed |
+| Build for TestFlight, app store, EAS, dev client | `expo-dev-client` | Delegate if installed |
+| Code structure, conventions, architecture | `react-native-skills` | Delegate if installed |
+| App is slow, performance, profiling | `react-native-best-practices` | Delegate if installed |
+| New project, setup, styling, Lottie animations, diagnosis | — | Handle directly (don't delegate) |
 
 **CRITICAL:** Even when delegating, this skill's library rules ALWAYS take precedence. If an extension skill suggests an avoided library (e.g., flash-list, nativewind, redux, async-storage), you MUST override with the approved alternative from [references/libraries.md](references/libraries.md). Do not follow the extension's library suggestion.
 
