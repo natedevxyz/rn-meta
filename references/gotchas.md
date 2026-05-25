@@ -7,18 +7,43 @@ Runtime issues that `meta-doctor` can't detect. Run doctor first - if it passes 
 **Build succeeds but simulator doesn't open**
 ```bash
 open -a Simulator
-npx expo run:ios --device
+./scripts/meta-run /path/to/app ios --device <UDID-or-name>
+```
+
+**Xcode reports no usable simulator destination**
+- Open Xcode → Settings → Platforms
+- Install the iOS Simulator runtime that matches the Xcode destination error
+- Retry with a specific simulator if needed:
+```bash
+./scripts/meta-run /path/to/app ios --device <UDID-or-name>
 ```
 
 **"No development build" error in Expo Go**
 - Meta uses dev client, not Expo Go
-- Rebuild: `npx expo run:ios`
+- Rebuild: `./scripts/meta-run /path/to/app`
+- After the dev client is installed on the simulator/device, start Metro with `npx expo start --clear`
 
 **App crashes on launch**
 - Check Xcode console for native errors
 - Try clean rebuild: `npx expo run:ios --clean`
 
 ## Styles Not Working
+
+**Doctor fails because the UniWind smoke proof is missing**
+- Ensure `MetaSmoke.tsx` exists under `src/components/` for `src/app/` projects or projects that already use `src/`, or `components/` for root `app/` projects
+- Ensure the visible home route renders `<MetaSmoke />`
+- Expected home routes: `app/index.tsx`, `src/app/index.tsx`, `app/(tabs)/index.tsx`, or `src/app/(tabs)/index.tsx`
+
+**Smoke proof is present but not styled on device**
+- Confirm the visible app screen shows `UniWind works`
+- Restart Metro after config changes:
+```bash
+npx expo start --clear
+```
+- Rebuild the dev client if native dependencies or config changed:
+```bash
+./scripts/meta-run /path/to/app
+```
 
 **className has no effect (doctor passes)**
 - Component may not support className - wrap in View with className
@@ -54,4 +79,3 @@ npx expo run:ios
 **"Signing requires a development team" error**
 - Open `ios/*.xcworkspace` in Xcode
 - Select target → Signing & Capabilities → set Team
-

@@ -35,10 +35,16 @@ Expo Router + TypeScript + Dev Client + Uniwind/Tailwind v4.
 ## New Project
 
 ```bash
-./scripts/meta-start <name>
-./scripts/meta-run <name>
+./scripts/meta-start <app-path-or-name> [--display-name <display-name>]
+./scripts/meta-run <path>
 npx expo start --clear
 ```
+
+`meta-start` supports both current Expo Router default layouts: root `app/` and `src/app/`. It adds CSS TypeScript declarations for `global.css` imports and patches the detected Router layout.
+
+It also creates a deliberate UniWind proof component (`MetaSmoke.tsx`) and renders it from the detected home route (`app/index.tsx`, `src/app/index.tsx`, or the matching `(tabs)/index.tsx`). Treat this visible proof as part of setup, not a cosmetic demo.
+
+`meta-start` should fail if it cannot install the smoke proof, and it runs `npx tsc --noEmit` after writing CSS/className TypeScript declarations.
 
 ## Decision Tree
 
@@ -46,8 +52,10 @@ These scripts are agent workflow tools. Prefer running them directly when their 
 
 | Situation | Action |
 |-----------|--------|
-| Starting a new Expo app | Run `./scripts/meta-start <name>` |
+| Starting a new Expo app | Run `./scripts/meta-start <app-path-or-name>` |
+| Starting in a specific folder with a different app display name | Run `./scripts/meta-start <path> --display-name <display-name>` |
 | Build/run requested | Run `./scripts/meta-run <path>` |
+| Build/run on a specific simulator/device | Run `./scripts/meta-run <path> ios --device <UDID-or-name>` |
 | Verify setup works | Run `./scripts/meta-doctor <path>` |
 | Something broke | Run `./scripts/meta-doctor <path>` first |
 | Doctor passes but still broken | Read [references/gotchas.md](references/gotchas.md) |
@@ -58,6 +66,8 @@ These scripts are agent workflow tools. Prefer running them directly when their 
 ## Runtime Verification Rule
 
 For any non-trivial visible UI, navigation, gesture, form, or multi-step workflow change, use `agent-device` for runtime verification when a simulator/device is available or practical to start. Treat screenshots, accessibility snapshots, interaction steps, and logs as expected evidence before finalizing. Skip only for docs, static code review, dependency choice, small isolated style edits, or tasks where no runnable app/device context exists.
+
+For new rn-meta apps, runtime verification should include visual evidence that the `MetaSmoke` component is visible and styled. A successful smoke proof shows the text `UniWind works` in the app, backed by a screenshot or accessibility snapshot when device automation is available.
 
 ## Extensions
 
@@ -137,9 +147,12 @@ When routing to `react-native-best-practices`, choose by task and provider. Do n
 ## Daily Commands
 
 ```bash
-./scripts/meta-run <path>   # Build + run (auto-detects iOS/Android)
-npx expo start --clear      # Dev server + clear cache (after config changes)
-npx expo start              # Dev server only (JS changes, no new packages)
+./scripts/meta-run <path>                             # Build + run (auto-detects iOS/Android)
+./scripts/meta-run <path> ios --device <UDID-or-name> # Build + run on a specific iOS simulator/device
+npx expo start --clear                                # Dev server + clear cache (after config changes)
+npx expo start                                        # Dev server only (JS changes, no new packages)
 ```
 
 Pass `android` as second arg to force Android when both platforms available.
+
+Because the Meta stack installs `expo-dev-client`, `npx expo start --ios` expects a development build to already exist on the simulator/device. Run `./scripts/meta-run <path>` successfully first, then use `npx expo start --clear` for Metro.

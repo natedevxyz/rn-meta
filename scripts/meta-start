@@ -1,21 +1,131 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_NAME="${1:-}"
-if [[ -z "$APP_NAME" ]]; then
-  echo "Usage: ./scripts/meta-start <app-name>"
+APP_PATH=""
+DISPLAY_NAME=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --display-name)
+      DISPLAY_NAME="${2:-}"
+      if [[ -z "$DISPLAY_NAME" ]]; then
+        echo "Error: --display-name requires a value."
+        exit 1
+      fi
+      shift 2
+      ;;
+    -h | --help)
+      echo "Usage: ./scripts/meta-start <app-path-or-name> [--display-name <display-name>]"
+      exit 0
+      ;;
+    -*)
+      echo "Error: Unknown option '$1'."
+      echo "Usage: ./scripts/meta-start <app-path-or-name> [--display-name <display-name>]"
+      exit 1
+      ;;
+    *)
+      if [[ -n "$APP_PATH" ]]; then
+        echo "Error: Only one app path/name may be provided."
+        exit 1
+      fi
+      APP_PATH="$1"
+      shift
+      ;;
+  esac
+done
+
+if [[ -z "$APP_PATH" ]]; then
+  echo "Usage: ./scripts/meta-start <app-path-or-name> [--display-name <display-name>]"
   exit 1
 fi
 
-if [[ -e "$APP_NAME" ]]; then
-  echo "Error: '$APP_NAME' already exists."
+APP_DIR="$(basename "$APP_PATH")"
+APP_PARENT="$(dirname "$APP_PATH")"
+if [[ "$APP_PARENT" == "." ]]; then
+  APP_PARENT="$(pwd)"
+else
+  mkdir -p "$APP_PARENT"
+  APP_PARENT="$(cd "$APP_PARENT" && pwd)"
+fi
+APP_PATH="$APP_PARENT/$APP_DIR"
+
+if [[ -z "$DISPLAY_NAME" ]]; then
+  DISPLAY_NAME="$APP_DIR"
+fi
+
+if [[ -e "$APP_PATH" ]]; then
+  echo "Error: '$APP_PATH' already exists."
   exit 1
 fi
 
-echo "➡️  Creating Expo app: $APP_NAME"
-pnpm create expo-app@latest "$APP_NAME" --template default
+find_app_root() {
+  local base="$1"
 
-cd "$APP_NAME"
+  if [[ -f "$base/app/_layout.tsx" || -d "$base/app" ]]; then
+    echo "app"
+    return 0
+  fi
+
+  if [[ -f "$base/src/app/_layout.tsx" || -d "$base/src/app" ]]; then
+    echo "src/app"
+    return 0
+  fi
+
+  return 1
+}
+
+layout_import_path() {
+  local app_root="$1"
+
+  case "$app_root" in
+    app) echo "../global.css" ;;
+    src/app) echo "../../global.css" ;;
+    *) return 1 ;;
+  esac
+}
+
+first_existing_index() {
+  local app_root="$1"
+  local candidate
+
+  for candidate in "$app_root/(tabs)/index.tsx" "$app_root/index.tsx"; do
+    if [[ -f "$candidate" ]]; then
+      echo "$candidate"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+component_root() {
+  local app_root="$1"
+
+  if [[ "$app_root" == src/app || -d src ]]; then
+    echo "src/components"
+  else
+    echo "components"
+  fi
+}
+
+echo "➡️  Creating Expo app: $DISPLAY_NAME at $APP_PATH"
+pnpm create expo-app@latest "$APP_PATH" --template default
+
+cd "$APP_PATH"
+
+if [[ "$DISPLAY_NAME" != "$APP_DIR" && -f app.json ]]; then
+  echo "➡️  Setting display name: $DISPLAY_NAME"
+  DISPLAY_NAME="$DISPLAY_NAME" node <<'NODE'
+const fs = require('fs');
+const appJsonPath = 'app.json';
+const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf8'));
+
+appJson.expo = appJson.expo || {};
+appJson.expo.name = process.env.DISPLAY_NAME;
+
+fs.writeFileSync(appJsonPath, `${JSON.stringify(appJson, null, 2)}\n`);
+NODE
+fi
 
 echo "➡️  Installing Expo Dev Client"
 npx expo install expo-dev-client
@@ -29,6 +139,42 @@ cat > global.css <<'CSS'
 @import 'uniwind';
 CSS
 
+echo "➡️  Writing CSS TypeScript declarations"
+if [[ -f global.d.ts ]]; then
+  grep -Fq "import 'react-native';" global.d.ts || printf "\nimport 'react-native';\n" >> global.d.ts
+  grep -Fq "declare module '*.css'" global.d.ts || printf "\ndeclare module '*.css';\n" >> global.d.ts
+  grep -Fq "declare module '*.module.css'" global.d.ts || printf "declare module '*.module.css';\n" >> global.d.ts
+  grep -Fq "interface ViewProps" global.d.ts || cat >> global.d.ts <<'TS'
+
+declare module 'react-native' {
+  interface ViewProps {
+    className?: string;
+  }
+
+  interface TextProps {
+    className?: string;
+  }
+}
+TS
+else
+  cat > global.d.ts <<'TS'
+import 'react-native';
+
+declare module '*.css';
+declare module '*.module.css';
+
+declare module 'react-native' {
+  interface ViewProps {
+    className?: string;
+  }
+
+  interface TextProps {
+    className?: string;
+  }
+}
+TS
+fi
+
 echo "➡️  Writing metro.config.js (Uniwind)"
 cat > metro.config.js <<'JS'
 const { getDefaultConfig } = require('expo/metro-config');
@@ -41,49 +187,110 @@ module.exports = withUniwindConfig(config, {
 });
 JS
 
-echo "➡️  Patching app/_layout.tsx to import global.css"
-LAYOUT="app/_layout.tsx"
+APP_ROOT="$(find_app_root "$(pwd)" || true)"
+if [[ -z "$APP_ROOT" ]]; then
+  echo "Error: Expo Router app directory not found. Expected app/ or src/app/."
+  exit 1
+else
+  echo "➡️  Detected Expo Router app root: $APP_ROOT"
+fi
+
+echo "➡️  Patching Router layout to import global.css"
+LAYOUT="$APP_ROOT/_layout.tsx"
 if [[ -f "$LAYOUT" ]]; then
   if ! grep -q "global.css" "$LAYOUT"; then
     tmpfile="$(mktemp)"
-    echo "import '../global.css';" > "$tmpfile"
+    echo "import '$(layout_import_path "$APP_ROOT")';" > "$tmpfile"
     cat "$LAYOUT" >> "$tmpfile"
     mv "$tmpfile" "$LAYOUT"
   fi
 else
-  echo "Warning: $LAYOUT not found. Add: import '../global.css'; at the top of your Router entry file."
+  echo "Error: Router layout not found at $LAYOUT."
+  exit 1
 fi
 
-echo "➡️  Patching app/(tabs)/index.tsx to demo Uniwind"
-INDEX="app/(tabs)/index.tsx"
-if [[ -f "$INDEX" ]]; then
-  node <<'NODE'
+COMPONENT_ROOT="$(component_root "$APP_ROOT")"
+SMOKE_COMPONENT="$COMPONENT_ROOT/MetaSmoke.tsx"
+
+echo "➡️  Writing UniWind smoke component"
+mkdir -p "$COMPONENT_ROOT"
+cat > "$SMOKE_COMPONENT" <<'TSX'
+import { Text, View } from 'react-native';
+
+export function MetaSmoke() {
+  return (
+    <View
+      testID="rn-meta-uniwind-smoke"
+      className="my-6 rounded-2xl border border-emerald-300 bg-emerald-500 px-5 py-4 shadow-lg"
+    >
+      <Text className="text-center text-lg font-bold text-white">
+        UniWind works
+      </Text>
+      <Text className="mt-1 text-center text-sm font-medium text-emerald-50">
+        rn-meta smoke proof
+      </Text>
+    </View>
+  );
+}
+TSX
+
+echo "➡️  Rendering UniWind smoke component from the home route"
+INDEX="$(first_existing_index "$APP_ROOT" || true)"
+if [[ -z "$INDEX" || ! -f "$INDEX" ]]; then
+  echo "Error: No Router home route found under $APP_ROOT. Expected $APP_ROOT/index.tsx or $APP_ROOT/(tabs)/index.tsx."
+  exit 1
+fi
+
+INDEX_PATH="$INDEX" COMPONENT_PATH="$SMOKE_COMPONENT" node <<'NODE'
 const fs = require('fs');
-const indexPath = 'app/(tabs)/index.tsx';
+const path = require('path');
+
+const indexPath = process.env.INDEX_PATH;
+const componentPath = process.env.COMPONENT_PATH;
 let content = fs.readFileSync(indexPath, 'utf8');
 
-if (!content.includes("from 'react-native'") && !content.includes('from "react-native"')) {
-  fs.writeFileSync(indexPath, content);
-  process.exit(0);
+const indexDir = path.dirname(indexPath);
+let importPath = path.relative(indexDir, componentPath).replace(/\\/g, '/').replace(/\.tsx$/, '');
+if (!importPath.startsWith('.')) importPath = `./${importPath}`;
+
+if (!content.includes("from '" + importPath + "'") && !content.includes('from "' + importPath + '"')) {
+  content = `import { MetaSmoke } from '${importPath}';\n${content}`;
 }
 
-if (!/\bText\b/.test(content.match(/import\s+\{[^}]*\}\s+from\s+['"]react-native['"]/)?.[0] || '')) {
-  content = content.replace(
-    /import\s+\{([^}]*)\}\s+from\s+(['"])react-native\2/,
-    (_match, imports, quote) => `import {${imports.trimEnd()}, Text } from ${quote}react-native${quote}`
-  );
-}
+if (!content.includes('<MetaSmoke />')) {
+  const replacements = [
+    /(<ParallaxScrollView\b[^>]*>)/,
+    /(<ScrollView\b[^>]*>)/,
+    /(<SafeAreaView\b[^>]*>)/,
+    /(<View\b[^>]*>)/,
+    /(<>\s*)/,
+  ];
 
-if (!content.includes('Uniwind works!')) {
-  content = content.replace(
-    '<ThemedText type="subtitle">Step 1: Try it',
-    '<Text className="text-green-500 text-xl">Uniwind works!</Text>\n        <ThemedText type="subtitle">Step 1: Try it'
-  );
+  let patched = false;
+  for (const pattern of replacements) {
+    if (pattern.test(content)) {
+      content = content.replace(pattern, `$1\n      <MetaSmoke />`);
+      patched = true;
+      break;
+    }
+  }
+
+  if (!patched) {
+    console.error(`Could not insert <MetaSmoke /> into ${indexPath}.`);
+    process.exit(1);
+  }
 }
 
 fs.writeFileSync(indexPath, content);
 NODE
+
+if ! grep -q "MetaSmoke" "$INDEX"; then
+  echo "Error: UniWind smoke component was not rendered from $INDEX."
+  exit 1
 fi
+
+echo "➡️  Running TypeScript smoke check"
+npx tsc --noEmit
 
 echo ""
 echo "✅ Done."
@@ -121,18 +328,21 @@ fi
 echo "Next:"
 echo "  1) Build the dev client:"
 if $has_ios; then
-  echo "     cd $APP_NAME && npx expo run:ios"
+  echo "     cd \"$APP_PATH\" && npx expo run:ios"
 elif $has_android; then
-  echo "     cd $APP_NAME && npx expo run:android"
+  echo "     cd \"$APP_PATH\" && npx expo run:android"
 else
-  echo "     cd $APP_NAME && npx expo run:ios  # (after installing Xcode)"
+  echo "     cd \"$APP_PATH\" && npx expo run:ios  # (after installing Xcode)"
 fi
 echo ""
 echo "  2) Start Metro (clear cache after config changes):"
 echo "     npx expo start --clear"
 echo ""
+echo "  3) Verify the smoke proof:"
+echo "     Capture a simulator/device screenshot or accessibility snapshot showing: UniWind works"
+echo ""
 if $has_ios; then
   echo "If the Simulator doesn't open:"
   echo "  open -a Simulator"
-  echo "  npx expo run:ios --device"
+  echo "  ./scripts/meta-run \"$APP_PATH\" ios --device <UDID-or-name>"
 fi

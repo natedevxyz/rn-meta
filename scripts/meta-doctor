@@ -49,6 +49,47 @@ function readJson(filePath) {
   }
 }
 
+function resolveRouterAppRoot() {
+  const candidates = ['app', path.join('src', 'app')];
+
+  for (const candidate of candidates) {
+    const absolute = path.join(projectPath, candidate);
+    if (!fs.existsSync(absolute)) continue;
+
+    const layoutPath = path.join(candidate, '_layout.tsx');
+    if (fileExists(layoutPath)) {
+      return { appRoot: candidate, layoutPath };
+    }
+
+    return { appRoot: candidate, layoutPath: null };
+  }
+
+  return null;
+}
+
+function globalCssImportFor(appRoot) {
+  if (appRoot === 'app') return '../global.css';
+  if (appRoot === path.join('src', 'app')) return '../../global.css';
+  return null;
+}
+
+function componentRootFor(appRoot) {
+  if (appRoot === path.join('src', 'app') || fs.existsSync(path.join(projectPath, 'src'))) {
+    return path.join('src', 'components');
+  }
+
+  return 'components';
+}
+
+function homeRouteFor(appRoot) {
+  const candidates = [
+    path.join(appRoot, '(tabs)', 'index.tsx'),
+    path.join(appRoot, 'index.tsx'),
+  ];
+
+  return candidates.find(fileExists) || null;
+}
+
 // === CHECKS ===
 
 function checkPlatformAvailable() {
@@ -88,6 +129,42 @@ function checkPlatformAvailable() {
     check('warn', 'iOS Simulator not detected', 'To run on iOS:\n  1. Install Xcode from the App Store\n  2. Open Xcode and install additional components\n  3. Run: open -a Simulator');
   } else {
     check('warn', 'No iOS Simulator or Android emulator detected', 'You need at least one platform to run the app:\n\n  iOS:\n    1. Install Xcode from the App Store\n    2. Open Xcode and install additional components\n    3. Run: open -a Simulator\n\n  Android:\n    1. Install Android Studio: https://developer.android.com/studio\n    2. Set ANDROID_HOME environment variable\n    3. Create an emulator in Android Studio → Virtual Device Manager');
+  }
+}
+
+function checkIosXcodeDestinations() {
+  try {
+    require('child_process').execSync('xcodebuild -version', { stdio: 'ignore' });
+  } catch {
+    return;
+  }
+
+  try {
+    require('child_process').execSync('xcrun simctl list devices', { stdio: 'ignore' });
+  } catch {
+    return;
+  }
+
+  try {
+    const runtimesRaw = require('child_process').execSync('xcrun simctl list runtimes available -j', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    const runtimes = JSON.parse(runtimesRaw).runtimes || [];
+    const iosRuntimes = runtimes.filter(runtime => runtime.platform === 'iOS' || runtime.identifier?.includes('iOS'));
+
+    if (iosRuntimes.length === 0) {
+      check('warn', 'No available iOS Simulator runtimes detected', 'Open Xcode → Settings → Platforms and install an iOS Simulator runtime, then retry:\n  npx expo run:ios');
+      return;
+    }
+
+    const sdksRaw = require('child_process').execSync('xcodebuild -showsdks', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    const sdkVersions = [...sdksRaw.matchAll(/iphonesimulator([0-9.]+)/g)].map(match => match[1]);
+    const runtimeVersions = iosRuntimes.map(runtime => runtime.version).filter(Boolean);
+    const hasMatchingRuntime = sdkVersions.length === 0 || sdkVersions.some(sdkVersion => runtimeVersions.includes(sdkVersion));
+
+    if (!hasMatchingRuntime) {
+      check('warn', 'Xcode iOS Simulator SDK does not match installed simulator runtimes', `Xcode SDK(s): ${sdkVersions.join(', ')}\nInstalled runtime(s): ${runtimeVersions.join(', ')}\nIf xcodebuild reports unusable destinations, open Xcode → Settings → Platforms and install the matching iOS Simulator runtime.`);
+    }
+  } catch {
+    check('warn', 'Could not inspect iOS Simulator runtimes', 'If expo run:ios fails with a destination error, open Xcode → Settings → Platforms and install a matching iOS Simulator runtime.');
   }
 }
 
@@ -136,6 +213,32 @@ function checkGlobalCss() {
   return true;
 }
 
+function checkCssTypeDeclarations() {
+  const candidates = [
+    'global.d.ts',
+    'env.d.ts',
+    'src/global.d.ts',
+    'src/env.d.ts',
+  ];
+
+  for (const candidate of candidates) {
+    const content = readFile(candidate);
+    if (!content) continue;
+
+    const hasCss = /declare\s+module\s+['"]\*\.css['"]/.test(content);
+    const hasModuleCss = /declare\s+module\s+['"]\*\.module\.css['"]/.test(content);
+    const hasClassName = /className\??\s*:\s*string/.test(content);
+
+    if (hasCss && hasModuleCss && hasClassName) {
+      check('pass', `${candidate} declares CSS imports and className for TypeScript`);
+      return true;
+    }
+  }
+
+  check('fail', 'CSS/className TypeScript declarations not found', `Create global.d.ts in the project root:\n\n  import 'react-native';\n\n  declare module '*.css';\n  declare module '*.module.css';\n\n  declare module 'react-native' {\n    interface ViewProps {\n      className?: string;\n    }\n\n    interface TextProps {\n      className?: string;\n    }\n  }`);
+  return false;
+}
+
 function checkMetroConfig() {
   if (!fileExists('metro.config.js')) {
     check('fail', './metro.config.js not found', `Create metro.config.js:\n\n  cat > metro.config.js <<'JS'\nconst { getDefaultConfig } = require('expo/metro-config');\nconst { withUniwindConfig } = require('uniwind/metro');\n\nconst config = getDefaultConfig(__dirname);\n\nmodule.exports = withUniwindConfig(config, {\n  cssEntryFile: './global.css',\n});\nJS`);
@@ -166,19 +269,66 @@ function checkMetroConfig() {
 }
 
 function checkLayoutImport() {
-  const layoutPath = 'app/_layout.tsx';
-  if (!fileExists(layoutPath)) {
-    check('warn', './app/_layout.tsx not found (expected for Expo Router)', 'If using Expo Router, ensure app/_layout.tsx exists and imports global.css');
+  const router = resolveRouterAppRoot();
+
+  if (!router) {
+    check('warn', 'Expo Router app directory not found', 'Expected either app/ or src/app/. If using Expo Router, ensure the app root exists and imports global.css from its _layout.tsx file.');
     return;
   }
 
-  const content = readFile(layoutPath);
+  if (!router.layoutPath) {
+    check('warn', `${router.appRoot}/_layout.tsx not found`, `If using Expo Router, create ${router.appRoot}/_layout.tsx and import global.css.`);
+    return;
+  }
+
+  const content = readFile(router.layoutPath);
   if (!content.includes('global.css')) {
-    check('fail', './app/_layout.tsx does not import global.css', `Add at the top of app/_layout.tsx:\n\nimport '../global.css';`);
+    const importPath = globalCssImportFor(router.appRoot);
+    check('fail', `${router.layoutPath} does not import global.css`, `Add at the top of ${router.layoutPath}:\n\nimport '${importPath}';`);
     return;
   }
 
-  check('pass', './app/_layout.tsx imports global.css');
+  check('pass', `${router.layoutPath} imports global.css`);
+}
+
+function checkUniwindSmokeProof() {
+  const router = resolveRouterAppRoot();
+
+  if (!router) {
+    check('fail', 'UniWind smoke proof cannot be checked because no Expo Router app root was found', 'Create either app/ or src/app/ and render MetaSmoke from the home route.');
+    return;
+  }
+
+  const componentPath = path.join(componentRootFor(router.appRoot), 'MetaSmoke.tsx');
+  const component = readFile(componentPath);
+
+  if (!component) {
+    check('fail', `${componentPath} not found`, `Create ${componentPath} with a visible className-styled smoke element and render it from the home route.`);
+    return;
+  }
+
+  const hasClassName = /className\s*=/.test(component);
+  const hasTestId = component.includes('rn-meta-uniwind-smoke');
+  const hasVisibleLabel = component.includes('UniWind works');
+
+  if (!hasClassName || !hasTestId || !hasVisibleLabel) {
+    check('fail', `${componentPath} is missing the expected UniWind smoke proof`, 'The component should include className styles, testID="rn-meta-uniwind-smoke", and visible text "UniWind works".');
+    return;
+  }
+
+  const homeRoute = homeRouteFor(router.appRoot);
+  if (!homeRoute) {
+    check('fail', 'No Router home route found for UniWind smoke proof', `Expected ${path.join(router.appRoot, 'index.tsx')} or ${path.join(router.appRoot, '(tabs)', 'index.tsx')}.`);
+    return;
+  }
+
+  const homeContent = readFile(homeRoute) || '';
+  if (!homeContent.includes('MetaSmoke') || !homeContent.includes('<MetaSmoke />')) {
+    check('fail', `${homeRoute} does not render the UniWind smoke proof`, `Import MetaSmoke from ${componentPath} and render <MetaSmoke /> in the visible home route.`);
+    return;
+  }
+
+  check('pass', `${homeRoute} renders the UniWind smoke proof`);
 }
 
 function checkUniwindInstalled(deps) {
@@ -216,6 +366,7 @@ function checkOptionalDeps(deps) {
 function run() {
   // Check platform availability first (warnings only)
   checkPlatformAvailable();
+  checkIosXcodeDestinations();
 
   const ctx = checkExpoProject();
   if (!ctx) {
@@ -228,8 +379,10 @@ function run() {
   checkDevClient(deps);
   checkUniwindInstalled(deps);
   checkGlobalCss();
+  checkCssTypeDeclarations();
   checkMetroConfig();
   checkLayoutImport();
+  checkUniwindSmokeProof();
   checkConflicts(deps);
 
   printResults();

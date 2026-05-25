@@ -1,7 +1,84 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_PATH="${1:-.}"
+PROJECT_PATH="."
+REQUESTED_PLATFORM=""
+DEVICE=""
+EXTRA_ARGS=()
+POSITIONAL=()
+
+usage() {
+  cat <<'EOF'
+Usage: ./scripts/meta-run [project-path] [ios|android] [--device <name-or-udid>]
+
+Examples:
+  ./scripts/meta-run ./my-app
+  ./scripts/meta-run ./my-app ios --device "iPhone 16"
+  ./scripts/meta-run ./my-app ios --device 00000000-0000-0000-0000-000000000000
+  ./scripts/meta-run ./my-app android
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --platform)
+      REQUESTED_PLATFORM="${2:-}"
+      if [[ "$REQUESTED_PLATFORM" != "ios" && "$REQUESTED_PLATFORM" != "android" ]]; then
+        echo "❌ --platform must be ios or android"
+        exit 1
+      fi
+      shift 2
+      ;;
+    --device)
+      DEVICE="${2:-}"
+      if [[ -z "$DEVICE" ]]; then
+        echo "❌ --device requires a simulator/device name or UDID"
+        exit 1
+      fi
+      shift 2
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      EXTRA_ARGS+=("$@")
+      break
+      ;;
+    -*)
+      EXTRA_ARGS+=("$1")
+      shift
+      ;;
+    *)
+      POSITIONAL+=("$1")
+      shift
+      ;;
+  esac
+done
+
+if [[ ${#POSITIONAL[@]} -gt 0 ]]; then
+  if [[ "${POSITIONAL[0]}" == "ios" || "${POSITIONAL[0]}" == "android" ]]; then
+    REQUESTED_PLATFORM="${POSITIONAL[0]}"
+  else
+    PROJECT_PATH="${POSITIONAL[0]}"
+  fi
+fi
+
+if [[ ${#POSITIONAL[@]} -gt 1 ]]; then
+  if [[ "${POSITIONAL[1]}" == "ios" || "${POSITIONAL[1]}" == "android" ]]; then
+    REQUESTED_PLATFORM="${POSITIONAL[1]}"
+  else
+    echo "❌ Unknown platform '${POSITIONAL[1]}'. Use ios or android."
+    exit 1
+  fi
+fi
+
+if [[ ${#POSITIONAL[@]} -gt 2 ]]; then
+  echo "❌ Too many positional arguments."
+  usage
+  exit 1
+fi
 
 # Resolve to absolute path
 PROJECT_PATH="$(cd "$PROJECT_PATH" && pwd)"
@@ -27,13 +104,21 @@ fi
 # Determine which platform to use
 platform=""
 
-if $has_ios && $has_android; then
-  # Both available - default to iOS, allow override
-  if [[ "${2:-}" == "android" ]]; then
-    platform="android"
-  else
-    platform="ios"
+if [[ -n "$REQUESTED_PLATFORM" ]]; then
+  if [[ "$REQUESTED_PLATFORM" == "ios" && "$has_ios" != true ]]; then
+    echo "❌ iOS requested, but no iOS Simulator is available"
+    exit 1
   fi
+
+  if [[ "$REQUESTED_PLATFORM" == "android" && "$has_android" != true ]]; then
+    echo "❌ Android requested, but no Android emulator is available"
+    exit 1
+  fi
+
+  platform="$REQUESTED_PLATFORM"
+elif $has_ios && $has_android; then
+  # Both available - default to iOS, allow override.
+  platform="ios"
 elif $has_ios; then
   platform="ios"
 elif $has_android; then
@@ -46,6 +131,152 @@ else
   exit 1
 fi
 
+ios_project_container_args() {
+  local workspace=""
+  local project=""
+
+  workspace="$(find "$PROJECT_PATH/ios" -maxdepth 1 -name '*.xcworkspace' -print -quit 2>/dev/null || true)"
+  if [[ -n "$workspace" ]]; then
+    printf '%s\n%s\n' "-workspace" "$workspace"
+    return 0
+  fi
+
+  project="$(find "$PROJECT_PATH/ios" -maxdepth 1 -name '*.xcodeproj' -print -quit 2>/dev/null || true)"
+  if [[ -n "$project" ]]; then
+    printf '%s\n%s\n' "-project" "$project"
+    return 0
+  fi
+
+  return 1
+}
+
+first_xcode_scheme() {
+  local container_args=("$@")
+  local list_output
+
+  list_output="$(xcodebuild "${container_args[@]}" -list 2>/dev/null || true)"
+  awk '
+    /^    Schemes:/ { in_schemes = 1; next }
+    in_schemes && NF { sub(/^[[:space:]]+/, ""); print; exit }
+  ' <<< "$list_output"
+}
+
+warn_if_ios_sdk_runtime_mismatch() {
+  local sdk_versions=""
+  local runtime_versions=""
+
+  sdk_versions="$(xcodebuild -showsdks 2>/dev/null | sed -nE 's/.*-sdk iphonesimulator([0-9.]+).*/\1/p' | sort -u || true)"
+  runtime_versions="$(xcrun simctl list runtimes available 2>/dev/null | sed -nE 's/.*iOS ([0-9.]+).*/\1/p' | sort -u || true)"
+
+  if [[ -z "$sdk_versions" || -z "$runtime_versions" ]]; then
+    return 0
+  fi
+
+  while IFS= read -r sdk_version; do
+    if grep -Fxq "$sdk_version" <<< "$runtime_versions"; then
+      return 0
+    fi
+  done <<< "$sdk_versions"
+
+  echo "⚠️  Xcode's iOS Simulator SDK version does not appear in the installed simulator runtimes."
+  echo "   Xcode SDK(s): $(tr '\n' ' ' <<< "$sdk_versions" | sed 's/[[:space:]]*$//')"
+  echo "   Runtime(s):   $(tr '\n' ' ' <<< "$runtime_versions" | sed 's/[[:space:]]*$//')"
+  echo "   If xcodebuild reports unusable destinations, install the matching runtime in Xcode → Settings → Platforms."
+}
+
+validate_ios_runtime() {
+  local runtimes
+
+  if ! xcodebuild -version >/dev/null 2>&1; then
+    echo "❌ xcodebuild is not available. Install/open Xcode before running iOS builds."
+    exit 1
+  fi
+
+  runtimes="$(xcrun simctl list runtimes available 2>/dev/null || true)"
+  if ! grep -q "iOS" <<< "$runtimes"; then
+    echo "❌ No available iOS Simulator runtime found."
+    echo ""
+    echo "   Open Xcode → Settings → Platforms and install an iOS Simulator runtime."
+    echo "   Then retry: ./scripts/meta-run \"$PROJECT_PATH\" ios"
+    exit 1
+  fi
+
+  warn_if_ios_sdk_runtime_mismatch
+
+  if [[ -n "$DEVICE" ]]; then
+    if ! xcrun simctl list devices available 2>/dev/null | grep -Fq "$DEVICE"; then
+      echo "❌ Requested iOS simulator/device was not found: $DEVICE"
+      echo ""
+      echo "   Available devices:"
+      xcrun simctl list devices available | sed -n '1,80p'
+      exit 1
+    fi
+  fi
+
+  if [[ ! -d "$PROJECT_PATH/ios" ]]; then
+    echo "ℹ️  No ios/ project yet; Expo will generate it during run:ios."
+    echo "   If Xcode later reports an unusable destination, install the matching runtime in Xcode → Settings → Platforms."
+    return 0
+  fi
+
+  local container_args=()
+  local scheme=""
+  local destinations=""
+
+  while IFS= read -r arg; do
+    container_args+=("$arg")
+  done < <(ios_project_container_args || true)
+  if [[ ${#container_args[@]} -eq 0 ]]; then
+    echo "⚠️  ios/ exists, but no .xcworkspace or .xcodeproj was found. Expo may need to regenerate native files."
+    return 0
+  fi
+
+  scheme="$(first_xcode_scheme "${container_args[@]}")"
+  if [[ -z "$scheme" ]]; then
+    echo "⚠️  Could not determine the iOS Xcode scheme; skipping destination preflight."
+    return 0
+  fi
+
+  destinations="$(xcodebuild "${container_args[@]}" -scheme "$scheme" -showdestinations 2>&1 || true)"
+  if grep -qi "Unable to find a destination matching" <<< "$destinations"; then
+    echo "❌ Xcode cannot find a usable iOS Simulator destination for scheme '$scheme'."
+    echo ""
+    echo "   This usually means Xcode is installed but the matching iOS Simulator runtime is missing."
+    echo "   Fix: Xcode → Settings → Platforms → install the iOS Simulator runtime shown by Xcode."
+    echo ""
+    echo "   You can also choose a specific installed simulator:"
+    echo "     ./scripts/meta-run \"$PROJECT_PATH\" ios --device <UDID-or-name>"
+    exit 1
+  fi
+
+  if ! grep -qiE "platform:iOS Simulator|iOS Simulator" <<< "$destinations"; then
+    echo "❌ Xcode reported no eligible iOS Simulator destinations for scheme '$scheme'."
+    echo ""
+    echo "$destinations" | sed -n '1,80p'
+    echo ""
+    echo "   Install a compatible runtime in Xcode → Settings → Platforms, or pass --device with a valid simulator."
+    exit 1
+  fi
+}
+
+if [[ "$platform" == "ios" ]]; then
+  validate_ios_runtime
+fi
+
 echo "➡️  Building for $platform"
 cd "$PROJECT_PATH"
-npx expo run:$platform
+cmd=(npx expo "run:$platform")
+
+if [[ -n "$DEVICE" ]]; then
+  cmd+=(--device "$DEVICE")
+fi
+
+cmd+=("${EXTRA_ARGS[@]}")
+
+printf '   %q' "${cmd[@]}"
+printf '\n'
+"${cmd[@]}"
+
+echo ""
+echo "✅ Build/run finished."
+echo "   Smoke proof: capture a simulator/device screenshot or accessibility snapshot showing 'UniWind works'."
