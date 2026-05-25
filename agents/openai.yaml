@@ -1,0 +1,4 @@
+interface:
+  display_name: "React Native Meta Stack"
+  short_description: "Routes React Native/Expo work"
+  default_prompt: "Use $rn-meta to build or update a React Native Expo app with the recommended stack and library policy."

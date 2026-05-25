@@ -57,13 +57,32 @@ fi
 echo "➡️  Patching app/(tabs)/index.tsx to demo Uniwind"
 INDEX="app/(tabs)/index.tsx"
 if [[ -f "$INDEX" ]]; then
-  # Add Text to the react-native import
-  if ! grep -q ", Text " "$INDEX"; then
-    sed -i '' "s/StyleSheet }/StyleSheet, Text }/" "$INDEX"
-  fi
-  # Add a green Text element between Welcome and Step 1 (match only Step 1)
-  sed -i '' 's/<ThemedText type="subtitle">Step 1: Try it/<Text className="text-green-500 text-xl">Uniwind works!<\/Text>\
-        <ThemedText type="subtitle">Step 1: Try it/' "$INDEX"
+  node <<'NODE'
+const fs = require('fs');
+const indexPath = 'app/(tabs)/index.tsx';
+let content = fs.readFileSync(indexPath, 'utf8');
+
+if (!content.includes("from 'react-native'") && !content.includes('from "react-native"')) {
+  fs.writeFileSync(indexPath, content);
+  process.exit(0);
+}
+
+if (!/\bText\b/.test(content.match(/import\s+\{[^}]*\}\s+from\s+['"]react-native['"]/)?.[0] || '')) {
+  content = content.replace(
+    /import\s+\{([^}]*)\}\s+from\s+(['"])react-native\2/,
+    (_match, imports, quote) => `import {${imports.trimEnd()}, Text } from ${quote}react-native${quote}`
+  );
+}
+
+if (!content.includes('Uniwind works!')) {
+  content = content.replace(
+    '<ThemedText type="subtitle">Step 1: Try it',
+    '<Text className="text-green-500 text-xl">Uniwind works!</Text>\n        <ThemedText type="subtitle">Step 1: Try it'
+  );
+}
+
+fs.writeFileSync(indexPath, content);
+NODE
 fi
 
 echo ""

@@ -7,6 +7,13 @@ Before recommending or installing any React Native package, check this list.
 - ❌ = Never use, suggest the approved alternative
 - If unlisted → Use judgment, prefer minimal dependencies
 
+## Conflicts & Existing Projects
+
+- If the user explicitly asks for an avoided library, explain the rn-meta preferred alternative and ask before proceeding with the avoided library.
+- If an existing project already uses an avoided library, do not refactor unrelated code just to enforce this policy. Prefer the approved library for new work, and migrate existing usage only when it is in scope.
+- If a companion skill recommends an avoided library, keep rn-meta's library policy in force unless the user approves an exception.
+- If a project constraint makes the approved library impractical, surface the constraint and choose the smallest exception that solves the task.
+
 ## Contents
 [Styling](#styling) | [Navigation](#navigation) | [Lists](#lists) | [State Management](#state-management) | [Data Fetching](#data-fetching) | [Storage](#storage) | [Forms & Inputs](#forms--inputs) | [Toasts](#toasts) | [Animations](#animations) | [Bottom Sheets](#bottom-sheets) | [Authentication](#authentication) | [Camera](#camera) | [Subscriptions](#subscriptions--in-app-purchases) | [Analytics](#analytics) | [Images](#images) | [Error Monitoring](#error-monitoring) | [Push Notifications](#push-notifications)
 

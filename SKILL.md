@@ -42,7 +42,7 @@ npx expo start --clear
 
 ## Decision Tree
 
-These scripts are agent workflow tools. Prefer running them directly when their situation applies, subject to normal user approval for network access, global skill changes, or platform builds. Do not only describe the command unless the user is asking for instructions rather than action.
+These scripts are agent workflow tools. Prefer running them directly when their situation applies, subject to normal user approval for network access, global skill changes, or platform builds. Get explicit approval before commands that install or update global skills. Do not only describe the command unless the user is asking for instructions rather than action.
 
 | Situation | Action |
 |-----------|--------|
@@ -53,7 +53,7 @@ These scripts are agent workflow tools. Prefer running them directly when their 
 | Doctor passes but still broken | Read [references/gotchas.md](references/gotchas.md) |
 | Script failed mid-setup | Read [references/starting.md](references/starting.md) |
 | Need to add a package | Check [references/libraries.md](references/libraries.md) first |
-| Need to refresh companion skills | Run `./scripts/meta-update` |
+| Need to refresh companion skills | Get approval, then run `./scripts/meta-update` |
 
 ## Runtime Verification Rule
 
@@ -73,13 +73,13 @@ Install specialized skills as needed:
 | Advanced interactions, Reanimated, gestures, SVG, audio, worklets, JSI | `./scripts/meta-extend interactions` | Software Mansion | `software-mansion-labs/skills` | `react-native-best-practices` |
 | Real app/device automation, QA, screenshots, logs, perf evidence | `./scripts/meta-extend device` | Callstack | `callstackincubator/agent-device` | `agent-device` |
 
-Run `./scripts/meta-extend` to see all options. When a companion skill is needed and missing, run `./scripts/meta-extend <extension>` rather than only suggesting it.
+Run `./scripts/meta-extend` to see all options. When a companion skill is needed and missing, get approval to run `./scripts/meta-extend <extension>` rather than only suggesting it.
 
 ## Updating Extensions
 
 Use `./scripts/meta-update` to refresh installed companion skills from their upstream repositories. It uses `npx skills update`, reports missing extensions with the matching `meta-extend` command, and keeps duplicate-name providers source-qualified.
 
-Run `meta-update` when the user asks to update or refresh skills, asks for latest companion-skill guidance, or a companion skill appears missing/stale. Because it updates global agent state and may use the network, follow the host agent's approval flow before running it when required.
+Run `meta-update` when the user asks to update or refresh skills, asks for latest companion-skill guidance, or a companion skill appears missing/stale. Because it updates global agent state and may use the network, get explicit approval through the host agent's approval flow before running it.
 
 ```bash
 ./scripts/meta-update                 # Update installed rn-meta extensions
@@ -97,15 +97,15 @@ This skill is the small, token-efficient router for React Native development. Ke
 3. If no specialist is needed, handle the task directly with this skill and the reference docs.
 4. If a specialist is needed, check only the matching companion skill in the active agent's global skills directory.
 5. For duplicate skill names, verify provider/source before delegating.
-6. If the matching specialist is installed, delegate to that skill. Do not load unrelated companion skills.
-7. If the matching specialist is missing, run `./scripts/meta-extend <extension>` when the user wants the capability installed.
-8. If the user asks for latest/current companion guidance, or the installed specialist appears stale, run `./scripts/meta-update`.
+6. If the matching specialist is installed, delegate to that skill. Use the host's explicit skill-invocation mechanism when available; otherwise read the installed companion skill's `SKILL.md` and follow only the relevant specialist guidance. Do not load unrelated companion skills.
+7. If the matching specialist is missing, get approval to run `./scripts/meta-extend <extension>` when the user wants the capability installed.
+8. If the user asks for latest/current companion guidance, or the installed specialist appears stale, get approval and run `./scripts/meta-update`.
 9. For meaningful visible app changes, consider `agent-device` part of the done criteria when a runnable simulator/device context exists. Delegate to the installed skill before planning or running device commands. Its version-matched CLI help is authoritative for command syntax, platform limits, and setup checks.
 
 **Check before delegating:** Does the skill exist in the active agent's global skills directory (`~/.claude/skills/<skill-name>` for Claude Code, `~/.codex/skills/<skill-name>` for Codex)? Also check provider/source when a source-qualified extension is available.
 
-- **If installed** → Invoke via Skill tool (e.g., `/building-native-ui`)
-- **If not installed** → Offer to install via `./scripts/meta-extend <extension>`
+- **If installed** → Invoke the named companion skill using the host's skill mechanism, or read its `SKILL.md` directly if the host has no explicit invocation syntax.
+- **If not installed** → Offer to install via `./scripts/meta-extend <extension>` and run it only after approval.
 
 ### Duplicate Skill Names
 
