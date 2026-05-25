@@ -1,0 +1,333 @@
+#!/usr/bin/env bash
+
+META_EXTENSIONS=(ui heroui dev-client best-practices performance interactions)
+META_AGENTS=(claude-code codex)
+
+agent_label() {
+  case "$1" in
+    claude-code) echo "Claude Code" ;;
+    codex) echo "Codex" ;;
+    *) return 1 ;;
+  esac
+}
+
+agent_global_skill_dir() {
+  local agent="$1"
+
+  if [[ -n "${SKILLS_DIR:-}" ]]; then
+    echo "$SKILLS_DIR"
+    return 0
+  fi
+
+  case "$agent" in
+    claude-code) echo "$HOME/.claude/skills" ;;
+    codex) echo "$HOME/.codex/skills" ;;
+    *) return 1 ;;
+  esac
+}
+
+target_agents_csv() {
+  local joined=""
+  local agent
+
+  for agent in "${META_AGENTS[@]}"; do
+    if [[ -z "$joined" ]]; then
+      joined="$(agent_label "$agent")"
+    else
+      joined="$joined, $(agent_label "$agent")"
+    fi
+  done
+
+  echo "$joined"
+}
+
+extension_provider() {
+  case "$1" in
+    ui) echo "Expo" ;;
+    heroui) echo "HeroUI" ;;
+    dev-client) echo "Expo" ;;
+    best-practices) echo "Vercel Labs" ;;
+    performance) echo "Callstack" ;;
+    interactions) echo "Software Mansion" ;;
+    *) return 1 ;;
+  esac
+}
+
+extension_source() {
+  case "$1" in
+    ui) echo "expo/skills" ;;
+    heroui) echo "heroui-inc/heroui" ;;
+    dev-client) echo "expo/skills" ;;
+    best-practices) echo "vercel-labs/agent-skills" ;;
+    performance) echo "callstackincubator/agent-skills" ;;
+    interactions) echo "software-mansion-labs/skills" ;;
+    *) return 1 ;;
+  esac
+}
+
+extension_skill() {
+  case "$1" in
+    ui) echo "building-native-ui" ;;
+    heroui) echo "heroui-native" ;;
+    dev-client) echo "expo-dev-client" ;;
+    best-practices) echo "react-native-skills" ;;
+    performance) echo "react-native-best-practices" ;;
+    interactions) echo "react-native-best-practices" ;;
+    *) return 1 ;;
+  esac
+}
+
+extension_purpose() {
+  case "$1" in
+    ui) echo "Native UI patterns, navigation, animations (recommended)" ;;
+    heroui) echo "HeroUI Native component library (Uniwind/Tailwind v4)" ;;
+    dev-client) echo "Build + distribute dev clients via EAS" ;;
+    best-practices) echo "React Native patterns + conventions" ;;
+    performance) echo "Performance profiling + optimization" ;;
+    interactions) echo "Reanimated, gestures, SVG, audio, worklets, JSI" ;;
+    *) return 1 ;;
+  esac
+}
+
+extension_provider_pattern() {
+  case "$1" in
+    performance) echo "Callstack|Ultimate Guide to React Native Optimization|FPS, TTI, bundle size" ;;
+    interactions) echo "Software Mansion|ExecuTorch|React Native Audio API|Gesture Handler" ;;
+    *) return 1 ;;
+  esac
+}
+
+extension_has_duplicate_name() {
+  case "$1" in
+    performance | interactions) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+is_known_extension() {
+  local requested="$1"
+  local extension
+
+  for extension in "${META_EXTENSIONS[@]}"; do
+    [[ "$extension" == "$requested" ]] && return 0
+  done
+
+  return 1
+}
+
+print_extensions() {
+  local extension
+
+  for extension in "${META_EXTENSIONS[@]}"; do
+    printf "  %-15s %s (%s)\n" "$extension" "$(extension_purpose "$extension")" "$(extension_provider "$extension")"
+  done
+}
+
+extension_list_csv() {
+  local joined=""
+  local extension
+
+  for extension in "${META_EXTENSIONS[@]}"; do
+    if [[ -z "$joined" ]]; then
+      joined="$extension"
+    else
+      joined="$joined, $extension"
+    fi
+  done
+
+  echo "$joined"
+}
+
+skill_path_for_agent() {
+  local agent="$1"
+  local skill="$2"
+
+  echo "$(agent_global_skill_dir "$agent")/$skill"
+}
+
+skill_path() {
+  local skill="$1"
+  skill_path_for_agent "${META_AGENTS[0]}" "$skill"
+}
+
+skill_file_for_agent() {
+  local agent="$1"
+  local skill="$2"
+
+  echo "$(skill_path_for_agent "$agent" "$skill")/SKILL.md"
+}
+
+skill_file() {
+  local skill="$1"
+  echo "$(skill_path "$skill")/SKILL.md"
+}
+
+is_skill_installed_for_agent() {
+  local agent="$1"
+  local skill="$2"
+
+  [[ -L "$(skill_path_for_agent "$agent" "$skill")" || -d "$(skill_path_for_agent "$agent" "$skill")" ]]
+}
+
+is_skill_installed() {
+  local skill="$1"
+  local agent
+
+  for agent in "${META_AGENTS[@]}"; do
+    is_skill_installed_for_agent "$agent" "$skill" && return 0
+  done
+
+  return 1
+}
+
+is_skill_installed_for_all_targets() {
+  local skill="$1"
+  local agent
+
+  for agent in "${META_AGENTS[@]}"; do
+    is_skill_installed_for_agent "$agent" "$skill" || return 1
+  done
+
+  return 0
+}
+
+skill_mentions_for_agent() {
+  local agent="$1"
+  local skill="$2"
+  local pattern="$3"
+  local file
+  file="$(skill_file_for_agent "$agent" "$skill")"
+
+  [[ -f "$file" ]] && grep -Eiq "$pattern" "$file"
+}
+
+skill_mentions() {
+  local skill="$1"
+  local pattern="$2"
+  local agent
+
+  for agent in "${META_AGENTS[@]}"; do
+    skill_mentions_for_agent "$agent" "$skill" "$pattern" && return 0
+  done
+
+  return 1
+}
+
+extension_installed_for_agent() {
+  local extension="$1"
+  local agent="$2"
+  local skill
+  local provider_pattern=""
+
+  skill="$(extension_skill "$extension")"
+  is_skill_installed_for_agent "$agent" "$skill" || return 1
+
+  if extension_has_duplicate_name "$extension"; then
+    provider_pattern="$(extension_provider_pattern "$extension")"
+    skill_mentions_for_agent "$agent" "$skill" "$provider_pattern"
+    return $?
+  fi
+
+  return 0
+}
+
+extension_installed_for_all_targets() {
+  local extension="$1"
+  local agent
+
+  for agent in "${META_AGENTS[@]}"; do
+    extension_installed_for_agent "$extension" "$agent" || return 1
+  done
+
+  return 0
+}
+
+extension_has_duplicate_conflict() {
+  local extension="$1"
+  local skill
+  local provider_pattern
+  local agent
+
+  extension_has_duplicate_name "$extension" || return 1
+
+  skill="$(extension_skill "$extension")"
+  provider_pattern="$(extension_provider_pattern "$extension")"
+
+  for agent in "${META_AGENTS[@]}"; do
+    if is_skill_installed_for_agent "$agent" "$skill" && ! skill_mentions_for_agent "$agent" "$skill" "$provider_pattern"; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+installed_duplicate_provider() {
+  local skill="$1"
+  local agent
+
+  for agent in "${META_AGENTS[@]}"; do
+    if skill_mentions_for_agent "$agent" "$skill" "$(extension_provider_pattern performance)"; then
+      echo "Callstack in $(agent_label "$agent")"
+      return 0
+    elif skill_mentions_for_agent "$agent" "$skill" "$(extension_provider_pattern interactions)"; then
+      echo "Software Mansion in $(agent_label "$agent")"
+      return 0
+    fi
+  done
+
+  echo "unknown provider"
+}
+
+print_skill_locations() {
+  local skill="$1"
+  local agent
+
+  for agent in "${META_AGENTS[@]}"; do
+    if is_skill_installed_for_agent "$agent" "$skill"; then
+      echo "     $(agent_label "$agent"): $(skill_path_for_agent "$agent" "$skill")"
+    fi
+  done
+}
+
+print_missing_agent_installs() {
+  local extension="$1"
+  local skill
+  local agent
+
+  skill="$(extension_skill "$extension")"
+
+  for agent in "${META_AGENTS[@]}"; do
+    if ! extension_installed_for_agent "$extension" "$agent"; then
+      echo "  Missing for $(agent_label "$agent"): $(skill_path_for_agent "$agent" "$skill")"
+    fi
+  done
+}
+
+warn_duplicate_collision() {
+  local extension="$1"
+  local skill
+  local provider
+
+  skill="$(extension_skill "$extension")"
+  provider="$(extension_provider "$extension")"
+
+  echo "⚠️  Cannot safely install or update $extension right now."
+  echo ""
+  echo "   $provider publishes a skill named: $skill"
+  echo "   Another $skill is already installed at:"
+  print_skill_locations "$skill"
+  echo ""
+  echo "   Detected provider: $(installed_duplicate_provider "$skill")"
+  echo ""
+  echo "   This is expected: Callstack and Software Mansion both publish"
+  echo "   a skill named $skill. Some agents/installers store skills in"
+  echo "   flat folders keyed by skill name, so installing both into the"
+  echo "   same location can overwrite or hide one provider."
+  echo ""
+  echo "   To use both, install one in a different supported scope or agent,"
+  echo "   or use an agent/selector that can distinguish duplicate skill names"
+  echo "   by source/path. rn-meta routes them by source:"
+  echo "     performance  -> callstackincubator/agent-skills"
+  echo "     interactions -> software-mansion-labs/skills"
+}

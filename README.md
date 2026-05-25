@@ -7,15 +7,15 @@ Stack: Expo Router + TypeScript + Expo Dev Client + Uniwind/Tailwind v4.
 ## Install
 
 ```bash
-npx skills add natedevxyz/rn-meta --global --agent claude-code
+npx skills add natedevxyz/rn-meta --global --agent claude-code --agent codex
 ```
 
 ## What You Get
 
 - A default stack that’s hard to mess up (routing, styling, state, storage, data fetching).
 - One source of truth for libraries: approved picks + setup examples.
-- Scripts to scaffold, run, and diagnose projects.
-- Optional “extensions” you can install for UI patterns, HeroUI, dev-client workflows, best practices, and performance.
+- Agent workflow scripts to scaffold, run, diagnose projects, and refresh companion skills.
+- Optional “extensions” you can install for UI patterns, HeroUI, dev-client workflows, best practices, performance, and advanced interactions.
 
 ## Approved Libraries (TL;DR)
 
@@ -49,26 +49,37 @@ Full details (behavioral notes + code examples): [references/libraries.md](refer
 npx expo start --clear
 ```
 
-## What’s Included
+## Agent Workflow Scripts
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/meta-start` | Scaffold a new Expo project with the full stack |
-| `scripts/meta-run` | Build + run (auto-detects iOS/Android) |
-| `scripts/meta-doctor` | Diagnose configuration issues |
-| `scripts/meta-extend` | Install companion extensions (UI, HeroUI, dev-client, best-practices, performance) |
+| `scripts/meta-start` | Agent scaffolds a new Expo project with the full stack |
+| `scripts/meta-run` | Agent builds + runs the app (auto-detects iOS/Android) |
+| `scripts/meta-doctor` | Agent diagnoses configuration issues |
+| `scripts/meta-extend` | Agent installs companion extensions globally for Claude Code and Codex |
+| `scripts/meta-update` | Agent updates installed companion skills globally using `npx skills update` |
 
 ## Extensions
 
 This skill can install companion skills from other authors:
 
-| Extension | Skill | Source |
-|-----------|-------|--------|
-| `ui` | Native UI patterns | [expo/skills](https://github.com/expo/skills) (`building-native-ui`) |
-| `heroui` | HeroUI component library | [heroui-inc/heroui](https://github.com/heroui-inc/heroui) (`heroui-native`) |
-| `dev-client` | EAS builds + TestFlight | [expo/skills](https://github.com/expo/skills) (`expo-dev-client`) |
-| `best-practices` | Patterns + conventions | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) (`react-native-skills`) |
-| `performance` | Profiling + optimization | [callstackincubator/agent-skills](https://github.com/callstackincubator/agent-skills) (`react-native-best-practices`) |
+| Extension | Provider | Source | Skill | Purpose |
+|-----------|----------|--------|-------|---------|
+| `ui` | Expo | [expo/skills](https://github.com/expo/skills) | `building-native-ui` | Native UI patterns |
+| `heroui` | HeroUI | [heroui-inc/heroui](https://github.com/heroui-inc/heroui) | `heroui-native` | HeroUI component library |
+| `dev-client` | Expo | [expo/skills](https://github.com/expo/skills) | `expo-dev-client` | EAS builds + TestFlight |
+| `best-practices` | Vercel Labs | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | `react-native-skills` | Patterns + conventions |
+| `performance` | Callstack | [callstackincubator/agent-skills](https://github.com/callstackincubator/agent-skills) | `react-native-best-practices` | Profiling + optimization |
+| `interactions` | Software Mansion | [software-mansion-labs/skills](https://github.com/software-mansion-labs/skills) | `react-native-best-practices` | Reanimated, gestures, SVG, audio, worklets, JSI, ExecuTorch |
+
+### Duplicate Skill Names
+
+Callstack and Software Mansion both publish a skill named `react-native-best-practices`. `rn-meta` treats them as separate extensions by source:
+
+- `performance` → Callstack `react-native-best-practices` from `callstackincubator/agent-skills`
+- `interactions` → Software Mansion `react-native-best-practices` from `software-mansion-labs/skills`
+
+Some agents and installers store skills in flat folders keyed by skill name. If one `react-native-best-practices` skill is already installed in that location, `meta-extend` will warn instead of silently overwriting or skipping the other provider.
 
 ```bash
 ./scripts/meta-extend ui              # Native UI patterns
@@ -76,10 +87,22 @@ This skill can install companion skills from other authors:
 ./scripts/meta-extend dev-client      # EAS builds + TestFlight
 ./scripts/meta-extend best-practices  # Patterns + conventions
 ./scripts/meta-extend performance     # Profiling + optimization
-./scripts/meta-extend all             # Everything
+./scripts/meta-extend interactions    # Reanimated, gestures, SVG, audio, worklets
+./scripts/meta-extend all             # Everything possible for Claude Code + Codex
 ```
 
 Run `./scripts/meta-extend` to see all options.
+
+## Updating Extensions
+
+Use `meta-update` to refresh installed companion skills from their upstream repositories for Claude Code and Codex:
+
+```bash
+./scripts/meta-update                 # Update every installed rn-meta extension
+./scripts/meta-update performance     # Update one extension
+```
+
+`meta-update` uses the official `npx skills update` command. If an extension is not installed for one of the target agents, it prints the matching `meta-extend` command instead of installing it implicitly.
 
 ## Troubleshooting
 
@@ -99,7 +122,7 @@ If the doctor passes but things are still broken:
 - [Uniwind](https://uniwind.dev/) — Tailwind utilities for React Native
 - [Tailwind CSS v4](https://tailwindcss.com/) — utility-first CSS
 
-## Claude Code Fallback References
+## Agent Fallback References
 
 - [references/libraries.md](references/libraries.md) — the library rules + examples
 - [references/gotchas.md](references/gotchas.md) — issues + fixes
@@ -111,4 +134,4 @@ MIT (see `LICENSE`).
 
 ## Notes
 
-`SKILL.md` is the Claude Code-facing entrypoint (name/description + agent instructions). `README.md` is for repo visitors.
+`SKILL.md` is the agent-facing entrypoint (name/description + agent instructions). `README.md` is for repo visitors.

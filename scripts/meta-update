@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/meta-lib"
+
+TARGET="${1:-all}"
+
+usage() {
+  echo "Usage: ./scripts/meta-update [extension|all]"
+  echo "Targets: $(target_agents_csv) global skills"
+  echo "Purpose: agent refreshes rn-meta companion skills when freshness matters"
+  echo ""
+  echo "Updates installed rn-meta companion skills with npx skills update."
+  echo "Missing extensions are reported with the matching meta-extend command."
+  echo ""
+  echo "Available extensions:"
+  print_extensions
+  echo "  all             Update every installed rn-meta extension"
+}
+
+update_extension() {
+  local extension="$1"
+  local source
+  local skill
+  local provider
+
+  source="$(extension_source "$extension")"
+  skill="$(extension_skill "$extension")"
+  provider="$(extension_provider "$extension")"
+
+  if ! is_skill_installed "$skill"; then
+    echo "○ $provider $skill is not installed."
+    echo "  Install it with: ./scripts/meta-extend $extension"
+    return 0
+  fi
+
+  if extension_has_duplicate_conflict "$extension"; then
+    warn_duplicate_collision "$extension"
+    return 0
+  fi
+
+  if ! extension_installed_for_all_targets "$extension"; then
+    echo "○ $provider $skill is not installed for every target agent."
+    print_missing_agent_installs "$extension"
+    echo "  Install missing targets with: ./scripts/meta-extend $extension"
+  fi
+
+  echo "➡️  Updating $extension: $provider $skill from $source"
+  npx --yes skills update "$skill" --global --yes
+}
+
+case "$TARGET" in
+  -h | --help | help)
+    usage
+    exit 0
+    ;;
+  all)
+    echo "Updating installed rn-meta extensions..."
+    for extension in "${META_EXTENSIONS[@]}"; do
+      update_extension "$extension"
+    done
+    ;;
+  *)
+    if ! is_known_extension "$TARGET"; then
+      echo "❌ Unknown extension: $TARGET"
+      echo ""
+      echo "Available: $(extension_list_csv), all"
+      exit 1
+    fi
+
+    update_extension "$TARGET"
+    ;;
+esac
+
+echo ""
+echo "✅ Done: $TARGET"
+echo ""
+echo "Restart your agent session to use updated skills."
