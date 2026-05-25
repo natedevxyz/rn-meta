@@ -119,29 +119,40 @@ export const queryPersister = createSyncStoragePersister({ storage: mmkvStorage 
 ## Bottom Sheets
 | Decision | Library |
 |----------|---------|
-| ✅ Use | Expo Router native sheets (see example below) - iOS only |
-| ✅ Use | `@gorhom/bottom-sheet` - Cross-platform, or when you need to persist state while sheet is hidden |
-| ❌ Avoid | `react-native-bottom-sheet` - Use expo-router formSheet or @gorhom/bottom-sheet |
+| ✅ Use | `@expo/ui` `BottomSheet` - Default for native universal bottom sheets on Android, iOS, and web |
+| ⚠️ Use sparingly | `@gorhom/bottom-sheet` - Only when you need advanced behavior not covered by `@expo/ui`, such as highly customized gestures or preserving complex mounted state while hidden |
+| ❌ Avoid | `react-native-bottom-sheet` - Use `@expo/ui` `BottomSheet`, or `@gorhom/bottom-sheet` only for advanced cases |
+
+Rule of thumb: use `@expo/ui` `BottomSheet` for bottom sheet UI. This includes action menus, filters, pickers, short forms, and other state-controlled sheet content.
+
+Expo Router `formSheet` is a navigation presentation, not the default bottom sheet component. Do not use it for ordinary bottom sheet UI. Only consider it when the sheet must be a routed screen that participates in back navigation, deep links, route layouts, and screen lifecycle.
 
 ```tsx
-// iOS only - formSheet presentation
-<Stack.Screen
-  name="<your-route-name>"
-  options={{
-    presentation: "formSheet",
-    gestureDirection: "vertical",
-    animation: "slide_from_bottom",
-    headerShown: false,
-    sheetGrabberVisible: true,
-    sheetInitialDetentIndex: 0,
-    sheetAllowedDetents: [0.33, 0.5, 1.0],
-    contentStyle: {
-      backgroundColor: "#fff",
-      flex: 1,
-      justifyContent: "flex-end",
-    },
-  }}
-/>
+import { useState } from "react";
+import { BottomSheet, Button, Column, Host, Text } from "@expo/ui";
+
+export function BottomSheetExample() {
+  const [isPresented, setIsPresented] = useState(false);
+
+  return (
+    <Host style={{ flex: 1 }}>
+      <Button label="Open sheet" onPress={() => setIsPresented(true)} />
+      <BottomSheet
+        isPresented={isPresented}
+        onDismiss={() => setIsPresented(false)}
+        snapPoints={["half", "full"]}
+      >
+        <Column spacing={12}>
+          <Text textStyle={{ fontSize: 18, fontWeight: "700" }}>
+            Sheet contents
+          </Text>
+          <Text>Drag down or tap the overlay to dismiss.</Text>
+          <Button label="Close" onPress={() => setIsPresented(false)} />
+        </Column>
+      </BottomSheet>
+    </Host>
+  );
+}
 ```
 
 ## Authentication
@@ -198,4 +209,3 @@ export const queryPersister = createSyncStoragePersister({ storage: mmkvStorage 
 | ✅ Use | `expo-notifications` - Push notifications |
 | ❌ Avoid | `@react-native-firebase/messaging` - Use expo-notifications instead |
 | ❌ Avoid | `react-native-push-notification` - Use expo-notifications instead |
-

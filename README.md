@@ -15,7 +15,7 @@ npx skills add natedevxyz/rn-meta --global --agent claude-code --agent codex
 - A default stack that’s hard to mess up (routing, styling, state, storage, data fetching).
 - One source of truth for libraries: approved picks + setup examples.
 - Agent workflow scripts to scaffold, run, diagnose projects, and refresh companion skills.
-- Optional “extensions” you can install for UI patterns, HeroUI, dev-client workflows, best practices, performance, and advanced interactions.
+- Optional “extensions” you can install for UI patterns, HeroUI, dev-client workflows, best practices, performance, advanced interactions, and real device/app verification.
 
 ## Approved Libraries (TL;DR)
 
@@ -32,7 +32,7 @@ Full details (behavioral notes + code examples): [references/libraries.md](refer
 | Forms & Inputs | `react-hook-form` + `zod`, `react-native-keyboard-controller` |
 | Toasts | `sonner-native` |
 | Animations | `@shopify/react-native-skia` Skottie (Lottie), `react-native-reanimated` (gestures/transitions via `ui` extension) |
-| Bottom Sheets | Expo Router `formSheet` (iOS), `@gorhom/bottom-sheet` (cross-platform) |
+| Bottom Sheets | `@expo/ui` `BottomSheet` |
 | Authentication | `@supabase/supabase-js` (anonymous first), `expo-apple-authentication`, Supabase OAuth (Google) |
 | Camera | `react-native-vision-camera` |
 | Subscriptions | `react-native-purchases` (RevenueCat) |
@@ -71,6 +71,7 @@ This skill can install companion skills from other authors:
 | `best-practices` | Vercel Labs | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | `react-native-skills` | Patterns + conventions |
 | `performance` | Callstack | [callstackincubator/agent-skills](https://github.com/callstackincubator/agent-skills) | `react-native-best-practices` | Profiling + optimization |
 | `interactions` | Software Mansion | [software-mansion-labs/skills](https://github.com/software-mansion-labs/skills) | `react-native-best-practices` | Reanimated, gestures, SVG, audio, worklets, JSI, ExecuTorch |
+| `device` | Callstack | [callstackincubator/agent-device](https://github.com/callstackincubator/agent-device) | `agent-device` | App/device automation, QA, screenshots, logs, perf evidence |
 
 ### Duplicate Skill Names
 
@@ -88,10 +89,15 @@ Some agents and installers store skills in flat folders keyed by skill name. If 
 ./scripts/meta-extend best-practices  # Patterns + conventions
 ./scripts/meta-extend performance     # Profiling + optimization
 ./scripts/meta-extend interactions    # Reanimated, gestures, SVG, audio, worklets
+./scripts/meta-extend device          # App/device automation + QA evidence
 ./scripts/meta-extend all             # Everything possible for Claude Code + Codex
 ```
 
 Run `./scripts/meta-extend` to see all options.
+
+### Runtime Verification
+
+When the `device` extension is installed, `rn-meta` treats `agent-device` as the default verification step for meaningful visible UI, navigation, gesture, form, and multi-step workflow changes when a simulator/device is available or practical to start. The expected evidence is screenshots, accessibility snapshots, interaction steps, and logs. It skips this for docs, static code review, dependency choices, tiny isolated style edits, or tasks without runnable app/device context.
 
 ## Updating Extensions
 

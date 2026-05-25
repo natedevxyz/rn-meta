@@ -1,6 +1,6 @@
 ---
 name: rn-meta
-description: Lightweight router for React Native/Expo development. Use FIRST for any React Native work—new projects, UI, styling, navigation, state, lists, storage, forms, auth, debugging, performance, animations, gestures, builds, or ANY library decision. Classifies the task, enforces the rn-meta stack/library rules, and delegates only to the relevant companion skill when needed.
+description: Lightweight router for React Native/Expo development. Use FIRST for any React Native work—new projects, UI, styling, navigation, state, lists, storage, forms, auth, debugging, performance, animations, gestures, builds, device verification, QA, or ANY library decision. Classifies the task, enforces the rn-meta stack/library rules, and delegates only to the relevant companion skill when needed.
 ---
 
 # React Native Meta Stack
@@ -55,6 +55,10 @@ These scripts are agent workflow tools. Prefer running them directly when their 
 | Need to add a package | Check [references/libraries.md](references/libraries.md) first |
 | Need to refresh companion skills | Run `./scripts/meta-update` |
 
+## Runtime Verification Rule
+
+For any non-trivial visible UI, navigation, gesture, form, or multi-step workflow change, use `agent-device` for runtime verification when a simulator/device is available or practical to start. Treat screenshots, accessibility snapshots, interaction steps, and logs as expected evidence before finalizing. Skip only for docs, static code review, dependency choice, small isolated style edits, or tasks where no runnable app/device context exists.
+
 ## Extensions
 
 Install specialized skills as needed:
@@ -67,6 +71,7 @@ Install specialized skills as needed:
 | Patterns + conventions | `./scripts/meta-extend best-practices` | Vercel Labs | `vercel-labs/agent-skills` | `react-native-skills` |
 | Performance profiling | `./scripts/meta-extend performance` | Callstack | `callstackincubator/agent-skills` | `react-native-best-practices` |
 | Advanced interactions, Reanimated, gestures, SVG, audio, worklets, JSI | `./scripts/meta-extend interactions` | Software Mansion | `software-mansion-labs/skills` | `react-native-best-practices` |
+| Real app/device automation, QA, screenshots, logs, perf evidence | `./scripts/meta-extend device` | Callstack | `callstackincubator/agent-device` | `agent-device` |
 
 Run `./scripts/meta-extend` to see all options. When a companion skill is needed and missing, run `./scripts/meta-extend <extension>` rather than only suggesting it.
 
@@ -95,6 +100,7 @@ This skill is the small, token-efficient router for React Native development. Ke
 6. If the matching specialist is installed, delegate to that skill. Do not load unrelated companion skills.
 7. If the matching specialist is missing, run `./scripts/meta-extend <extension>` when the user wants the capability installed.
 8. If the user asks for latest/current companion guidance, or the installed specialist appears stale, run `./scripts/meta-update`.
+9. For meaningful visible app changes, consider `agent-device` part of the done criteria when a runnable simulator/device context exists. Delegate to the installed skill before planning or running device commands. Its version-matched CLI help is authoritative for command syntax, platform limits, and setup checks.
 
 **Check before delegating:** Does the skill exist in the active agent's global skills directory (`~/.claude/skills/<skill-name>` for Claude Code, `~/.codex/skills/<skill-name>` for Codex)? Also check provider/source when a source-qualified extension is available.
 
@@ -123,7 +129,8 @@ When routing to `react-native-best-practices`, choose by task and provider. Do n
 | Code structure, conventions, architecture | Vercel Labs `react-native-skills` from `vercel-labs/agent-skills` | Delegate if installed |
 | App is slow, janky, leaking memory, slow to start, or has large bundle/app size | Callstack `react-native-best-practices` from `callstackincubator/agent-skills` | Delegate if installed |
 | Reanimated, Gesture Handler, SVG, audio, worklets, JSI, ExecuTorch, rich text, advanced native interactions | Software Mansion `react-native-best-practices` from `software-mansion-labs/skills` | Delegate if installed |
-| New project, setup, styling, Lottie animations, diagnosis | — | Handle directly (don't delegate) |
+| Non-trivial visible UI, navigation, gesture, form, or multi-step workflow changes; test, dogfood, or verify a real app on simulator/device; inspect UI; tap/type/scroll; capture screenshots, video, logs, network, perf, React profiles, or `.ad` replay scripts | Callstack `agent-device` from `callstackincubator/agent-device` | Delegate if installed; use as runtime evidence before finalizing when simulator/device context exists |
+| New project, setup, styling, Lottie animations, static diagnosis | — | Handle directly (don't delegate) |
 
 **CRITICAL:** Even when delegating, this skill's library rules ALWAYS take precedence. If an extension skill suggests an avoided library (e.g., flash-list, nativewind, redux, async-storage), you MUST override with the approved alternative from [references/libraries.md](references/libraries.md). Do not follow the extension's library suggestion.
 

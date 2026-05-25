@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-META_EXTENSIONS=(ui heroui dev-client best-practices performance interactions)
+META_EXTENSIONS=(ui heroui dev-client best-practices performance interactions device)
 META_AGENTS=(claude-code codex)
 
 agent_label() {
@@ -49,6 +49,7 @@ extension_provider() {
     best-practices) echo "Vercel Labs" ;;
     performance) echo "Callstack" ;;
     interactions) echo "Software Mansion" ;;
+    device) echo "Callstack" ;;
     *) return 1 ;;
   esac
 }
@@ -61,6 +62,7 @@ extension_source() {
     best-practices) echo "vercel-labs/agent-skills" ;;
     performance) echo "callstackincubator/agent-skills" ;;
     interactions) echo "software-mansion-labs/skills" ;;
+    device) echo "callstackincubator/agent-device" ;;
     *) return 1 ;;
   esac
 }
@@ -73,6 +75,7 @@ extension_skill() {
     best-practices) echo "react-native-skills" ;;
     performance) echo "react-native-best-practices" ;;
     interactions) echo "react-native-best-practices" ;;
+    device) echo "agent-device" ;;
     *) return 1 ;;
   esac
 }
@@ -85,6 +88,7 @@ extension_purpose() {
     best-practices) echo "React Native patterns + conventions" ;;
     performance) echo "Performance profiling + optimization" ;;
     interactions) echo "Reanimated, gestures, SVG, audio, worklets, JSI" ;;
+    device) echo "Real app/device automation, QA, screenshots, logs, perf evidence" ;;
     *) return 1 ;;
   esac
 }

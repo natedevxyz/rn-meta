@@ -58,7 +58,7 @@ install_extension() {
 }
 
 case "$EXTENSION" in
-  ui | heroui | dev-client | best-practices | performance | interactions)
+  ui | heroui | dev-client | best-practices | performance | interactions | device)
     install_extension "$EXTENSION"
     ;;
   all)
