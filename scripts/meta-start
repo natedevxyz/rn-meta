@@ -232,9 +232,6 @@ export function MetaSmoke() {
       <Text className="text-center text-lg font-bold text-white">
         UniWind works
       </Text>
-      <Text className="mt-1 text-center text-sm font-medium text-emerald-50">
-        rn-meta smoke proof
-      </Text>
     </View>
   );
 }
