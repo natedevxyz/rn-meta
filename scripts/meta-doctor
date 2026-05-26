@@ -214,28 +214,46 @@ function checkGlobalCss() {
 }
 
 function checkCssTypeDeclarations() {
-  const candidates = [
+  const cssCandidates = [
+    'css.d.ts',
+    'global.d.ts',
+    'env.d.ts',
+    'src/css.d.ts',
+    'src/global.d.ts',
+    'src/env.d.ts',
+  ];
+  const classNameCandidates = [
     'global.d.ts',
     'env.d.ts',
     'src/global.d.ts',
     'src/env.d.ts',
   ];
 
-  for (const candidate of candidates) {
+  const cssDeclaration = cssCandidates.find(candidate => {
     const content = readFile(candidate);
-    if (!content) continue;
+    if (!content) return false;
+
+    const isModuleFile = /^\s*(import|export)\b/m.test(content);
+    if (isModuleFile) return false;
 
     const hasCss = /declare\s+module\s+['"]\*\.css['"]/.test(content);
     const hasModuleCss = /declare\s+module\s+['"]\*\.module\.css['"]/.test(content);
-    const hasClassName = /className\??\s*:\s*string/.test(content);
+    return hasCss && hasModuleCss;
+  });
 
-    if (hasCss && hasModuleCss && hasClassName) {
-      check('pass', `${candidate} declares CSS imports and className for TypeScript`);
-      return true;
-    }
+  const classNameDeclaration = classNameCandidates.find(candidate => {
+    const content = readFile(candidate);
+    if (!content) return false;
+
+    return /className\??\s*:\s*string/.test(content);
+  });
+
+  if (cssDeclaration && classNameDeclaration) {
+    check('pass', `${cssDeclaration} declares CSS imports and ${classNameDeclaration} declares className for TypeScript`);
+    return true;
   }
 
-  check('fail', 'CSS/className TypeScript declarations not found', `Create global.d.ts in the project root:\n\n  import 'react-native';\n\n  declare module '*.css';\n  declare module '*.module.css';\n\n  declare module 'react-native' {\n    interface ViewProps {\n      className?: string;\n    }\n\n    interface TextProps {\n      className?: string;\n    }\n  }`);
+  check('fail', 'CSS/className TypeScript declarations not found', `Create css.d.ts in the project root without imports:\n\n  declare module '*.css';\n  declare module '*.module.css';\n\nCreate global.d.ts in the project root for React Native className types:\n\n  import 'react-native';\n\n  declare module 'react-native' {\n    interface ViewProps {\n      className?: string;\n    }\n\n    interface TextProps {\n      className?: string;\n    }\n  }`);
   return false;
 }
 

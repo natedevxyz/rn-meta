@@ -44,7 +44,7 @@ npx expo start --clear
 
 It also creates a deliberate UniWind proof component (`MetaSmoke.tsx`) and renders it from the detected home route (`app/index.tsx`, `src/app/index.tsx`, or the matching `(tabs)/index.tsx`). Treat this visible proof as part of setup, not a cosmetic demo.
 
-`meta-start` should fail if it cannot install the smoke proof, and it runs `npx tsc --noEmit` after writing CSS/className TypeScript declarations.
+`meta-start` should fail if it cannot install the smoke proof, and it runs `npx tsc --noEmit` after writing TypeScript declarations. Keep CSS wildcard declarations in import-free `css.d.ts`; keep React Native `className` augmentation in `global.d.ts`.
 
 ## Decision Tree
 

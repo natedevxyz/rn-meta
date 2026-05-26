@@ -43,13 +43,16 @@ module.exports = withUniwindConfig(config, {
 });
 ```
 
-### 7. Add CSS TypeScript declarations
-Create `global.d.ts`:
+### 7. Add TypeScript declarations
+Create `css.d.ts` without imports. This file must remain a global script so TS 6 treats the wildcard CSS declarations as ambient.
 ```ts
-import 'react-native';
-
 declare module '*.css';
 declare module '*.module.css';
+```
+
+Create `global.d.ts` for React Native `className` augmentation:
+```ts
+import 'react-native';
 
 declare module 'react-native' {
   interface ViewProps {

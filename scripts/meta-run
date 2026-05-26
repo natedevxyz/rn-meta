@@ -271,7 +271,9 @@ if [[ -n "$DEVICE" ]]; then
   cmd+=(--device "$DEVICE")
 fi
 
-cmd+=("${EXTRA_ARGS[@]}")
+if [[ ${#EXTRA_ARGS[@]} -gt 0 ]]; then
+  cmd+=("${EXTRA_ARGS[@]}")
+fi
 
 printf '   %q' "${cmd[@]}"
 printf '\n'

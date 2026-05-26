@@ -140,10 +140,19 @@ cat > global.css <<'CSS'
 CSS
 
 echo "➡️  Writing CSS TypeScript declarations"
+if [[ -f css.d.ts ]]; then
+  grep -Fq "declare module '*.css'" css.d.ts || printf "\ndeclare module '*.css';\n" >> css.d.ts
+  grep -Fq "declare module '*.module.css'" css.d.ts || printf "declare module '*.module.css';\n" >> css.d.ts
+else
+  cat > css.d.ts <<'TS'
+declare module '*.css';
+declare module '*.module.css';
+TS
+fi
+
+echo "➡️  Writing React Native className TypeScript declarations"
 if [[ -f global.d.ts ]]; then
   grep -Fq "import 'react-native';" global.d.ts || printf "\nimport 'react-native';\n" >> global.d.ts
-  grep -Fq "declare module '*.css'" global.d.ts || printf "\ndeclare module '*.css';\n" >> global.d.ts
-  grep -Fq "declare module '*.module.css'" global.d.ts || printf "declare module '*.module.css';\n" >> global.d.ts
   grep -Fq "interface ViewProps" global.d.ts || cat >> global.d.ts <<'TS'
 
 declare module 'react-native' {
@@ -159,9 +168,6 @@ TS
 else
   cat > global.d.ts <<'TS'
 import 'react-native';
-
-declare module '*.css';
-declare module '*.module.css';
 
 declare module 'react-native' {
   interface ViewProps {
