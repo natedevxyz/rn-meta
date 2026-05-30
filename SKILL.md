@@ -15,7 +15,7 @@ Expo Router + TypeScript + Dev Client + Uniwind/Tailwind v4.
 |------------------------------|------------------|
 | `@shopify/flash-list` | `@legendapp/list` |
 | `nativewind` | `uniwind` |
-| `redux` / `@reduxjs/toolkit` | `zustand` |
+| `redux` / `@reduxjs/toolkit` / `zustand` | `@legendapp/state@beta` for app state, React built-ins for simple local state |
 | `async-storage` | `react-native-mmkv` |
 | `fetch` | `axios` |
 | `formik` / `yup` | `react-hook-form` + `zod` |
@@ -31,6 +31,8 @@ Expo Router + TypeScript + Dev Client + Uniwind/Tailwind v4.
 - Unlisted → use judgment, prefer minimal dependencies
 
 **Full list:** [references/libraries.md](references/libraries.md)
+
+**State rule of thumb:** Use `@legendapp/state@beta` for shared, persisted, derived, synced, offline-first, or performance-sensitive app state. Keep `useState`, `useReducer`, and local component state for simple one-screen values like toggles, sheet visibility, temporary input affordances, and UI-only flags that do not need sharing or persistence. Use React Query for ordinary server/cache state. When changing existing Zustand code, migrate only if that state domain is in scope.
 
 ## New Project
 

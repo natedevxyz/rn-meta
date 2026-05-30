@@ -44,27 +44,74 @@ Before recommending or installing any React Native package, check this list.
 ## State Management
 | Decision | Library |
 |----------|---------|
-| ✅ Use | `zustand` with persist middleware + MMKV storage - For persisted state |
-| ✅ Use | `react` (useState, useReducer, context) - For local/shared state |
-| ❌ Avoid | `redux` / `@reduxjs/toolkit` - Too complex, use zustand |
-| ❌ Avoid | `mobx` - Use zustand |
+| ✅ Use | `@legendapp/state@beta` with MMKV persistence - Default for shared, persisted, derived, synced, or performance-sensitive app state |
+| ✅ Use | `react` (`useState`, `useReducer`, context) - Default for simple local or scoped component state |
+| ❌ Avoid | `zustand` - Use Legend State for new app state |
+| ❌ Avoid | `redux` / `@reduxjs/toolkit` - Too complex, use Legend State |
+| ❌ Avoid | `mobx` - Use Legend State |
 
-**Zustand persistence rules:**
-- ✅ Persist only small data: user prefs, session flags, UI state
-- ❌ Never persist large query caches in zustand (use react-query persistence instead)
+**State ownership:**
+| State kind | Owner |
+|------------|-------|
+| Simple component-only values, toggles, sheet visibility, ephemeral UI flags | `useState` / `useReducer` |
+| Scoped dependency injection or a small subtree value | React context, usually with local reducer/state |
+| Server data, request lifecycle, cache invalidation, background refetch | React Query |
+| Shared app state, persisted preferences, derived/computed state, local-first or offline-write workflows, high-frequency UI state | Legend State |
+| Tokens, credentials, or other secrets | `expo-secure-store` |
+
+**Legend State rules:**
+- ✅ Start new projects with `@legendapp/state@beta` while Legend State v3 is in beta.
+- ✅ Name observables with a `$` suffix, read them in React with `useValue`, and update them with `set()`.
+- ✅ Use Legend State for state that is shared across screens, persisted, derived/computed, synced, offline-first, or updated frequently enough that fine-grained reactivity matters.
+- ✅ Use `useState`/`useReducer` for boring local state: toggles, modal or sheet visibility, temporary component-only values, local animation flags, and values that do not need sharing or persistence.
+- ✅ Persist only small durable app state: user preferences, session flags, onboarding flags, UI state.
+- ❌ Do not replace every `useState` with Legend State. Local React state is still the right default for simple component state.
+- ❌ Never persist large query caches in Legend State (use react-query persistence instead).
 - ❌ Never store secrets in MMKV (use expo-secure-store)
+- ❌ Do not mirror ordinary server state into Legend State when React Query already owns it. Use Legend State sync deliberately for local-first/offline-write workflows.
 
-**Zustand + MMKV setup:**
+**Project conventions:**
+- Put shared app stores in `src/state/*.ts` unless the app already has a clear state directory.
+- Use a `$` suffix for observables (`appState$`, `session$`, `preferences$`).
+- Prefer `useValue(...)` for React reads.
+- Export small command functions for writes when they clarify intent or keep screen code readable.
+- Keep tiny screen-only observables inside the component only when `useState`/`useReducer` is not enough.
+- Do not use React context as a general app store.
+
+**Migration guardrails:**
+- Avoid Zustand for new work.
+- Do not refactor existing Zustand code only to satisfy this policy.
+- Migrate an existing Zustand store only when the user asks for the migration, or when you are already changing that state domain and the migration lowers complexity.
+
+**Legend State + MMKV setup:**
 ```typescript
-import { StateStorage } from 'zustand/middleware'
-import { MMKV } from 'react-native-mmkv'
+import { observable } from "@legendapp/state"
+import { useValue } from "@legendapp/state/react"
+import { ObservablePersistMMKV } from "@legendapp/state/persist-plugins/mmkv"
+import { syncObservable } from "@legendapp/state/sync"
 
-const storage = new MMKV()
+type ColorSchemePreference = "system" | "light" | "dark"
 
-export const zustandStorage: StateStorage = {
-  setItem: (name, value) => storage.set(name, value),
-  getItem: (name) => storage.getString(name) ?? null,
-  removeItem: (name) => storage.delete(name),
+export const appState$ = observable({
+  preferences: {
+    colorScheme: "system" as ColorSchemePreference,
+    hasSeenOnboarding: false,
+  },
+})
+
+syncObservable(appState$, {
+  persist: {
+    name: "app-state",
+    plugin: ObservablePersistMMKV,
+  },
+})
+
+export function useColorSchemePreference() {
+  return useValue(appState$.preferences.colorScheme)
+}
+
+export function setColorSchemePreference(value: ColorSchemePreference) {
+  appState$.preferences.colorScheme.set(value)
 }
 ```
 
