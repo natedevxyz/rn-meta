@@ -26,7 +26,7 @@ Full details (behavioral notes + code examples): [references/libraries.md](refer
 | Styling | `uniwind` |
 | Navigation | `expo-router`, `NativeTabs`, `react-native-bottom-tabs` (fallback) |
 | Lists | `@legendapp/list`, `FlatList` (small lists) |
-| State Management | `zustand` + MMKV persist, React built-ins |
+| State Management | `@legendapp/state@beta` + MMKV persist, React built-ins for simple local state |
 | Data Fetching | `@tanstack/react-query` + persist + `axios` |
 | Storage | `react-native-mmkv`, `expo-secure-store` (sensitive) |
 | Forms & Inputs | `react-hook-form` + `zod`, `react-native-keyboard-controller` |
