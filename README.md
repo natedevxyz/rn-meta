@@ -15,7 +15,8 @@ npx skills add natedevxyz/rn-meta --global --agent claude-code --agent codex
 - A default stack that’s hard to mess up (routing, styling, state, storage, data fetching).
 - One source of truth for libraries: approved picks + setup examples.
 - Agent workflow scripts to scaffold, run, diagnose projects, and refresh companion skills.
-- Optional “extensions” you can install for UI patterns, HeroUI, dev-client workflows, best practices, performance, advanced interactions, and real device/app verification.
+- Optional “extensions” you can install for UI patterns, HeroUI, dev-client workflows, best practices, performance, and advanced interactions.
+- Core runtime verification with Callstack `agent-device` when a simulator/device is available.
 
 ## Approved Libraries (TL;DR)
 
@@ -45,9 +46,11 @@ Full details (behavioral notes + code examples): [references/libraries.md](refer
 
 ```bash
 ./scripts/meta-start <app-name>
+./scripts/meta-setup <app-name>
 ./scripts/meta-run <app-name>
-npx expo start --clear
 ```
+
+Full verification for a new app includes an `agent-device` screenshot or accessibility snapshot proving the `MetaSmoke` text `UniWind works` is visible.
 
 ## Agent Workflow Scripts
 
@@ -55,9 +58,23 @@ npx expo start --clear
 |--------|---------|
 | `scripts/meta-start` | Agent scaffolds a new Expo project with the full stack |
 | `scripts/meta-run` | Agent builds + runs the app (auto-detects iOS/Android) |
-| `scripts/meta-doctor` | Agent diagnoses configuration issues |
+| `scripts/meta-setup` | Agent diagnoses rn-meta setup, config, and native wiring issues |
+| `scripts/meta-doctor` | Agent runs TypeScript + React Doctor static quality checks |
 | `scripts/meta-extend` | Agent installs companion extensions globally for Claude Code and Codex |
 | `scripts/meta-update` | Agent updates installed companion skills globally using `npx skills update` |
+
+## Quality Checks
+
+Use `meta-doctor` after non-trivial component, state/effect, performance, accessibility, or architecture changes:
+
+```bash
+./scripts/meta-doctor ./my-app
+./scripts/meta-doctor ./my-app --full
+```
+
+By default it runs TypeScript plus `npx react-doctor@latest --diff --no-score`, so agents focus on changed code instead of inherited backlog. Use `--full` for a full React Doctor audit. This is separate from `meta-setup`: `meta-setup` checks Expo/RN setup and native configuration, while `meta-doctor` checks React/RN code quality.
+
+React Doctor's optional installer (`npx react-doctor@latest install`) can add CI and agent hooks, but `meta-doctor` does not install or mutate that setup by default.
 
 ## Extensions
 
@@ -93,11 +110,25 @@ Some agents and installers store skills in flat folders keyed by skill name. If 
 ./scripts/meta-extend all             # Everything possible for Claude Code + Codex
 ```
 
-Run `./scripts/meta-extend` to see all options.
+Run `./scripts/meta-extend` to see all options. Install `device` when you want full rn-meta runtime verification:
+
+```bash
+./scripts/meta-extend device
+```
 
 ### Runtime Verification
 
-When the `device` extension is installed, `rn-meta` treats `agent-device` as the default verification step for meaningful visible UI, navigation, gesture, form, and multi-step workflow changes when a simulator/device is available or practical to start. The expected evidence is screenshots, accessibility snapshots, interaction steps, and logs. It skips this for docs, static code review, dependency choices, tiny isolated style edits, or tasks without runnable app/device context.
+`rn-meta` treats `agent-device` as required for full runtime verification when a simulator/device is available or practical to start. It is not part of the static `meta-setup` pass/fail result; if the companion skill is missing, install it with `./scripts/meta-extend device`.
+
+For new apps, full verification means:
+
+```text
+meta-setup passes
+meta-run launches the app
+agent-device proves "UniWind works" is visible
+```
+
+For meaningful visible UI, navigation, gesture, form, and multi-step workflow changes, expected evidence includes screenshots, accessibility snapshots, interaction steps, and logs. Skip runtime verification only for docs, static code review, dependency choices, tiny isolated style edits, or tasks without runnable app/device context.
 
 ## Updating Extensions
 
@@ -113,12 +144,12 @@ Use `meta-update` to refresh installed companion skills from their upstream repo
 ## Troubleshooting
 
 ```bash
-./scripts/meta-doctor ./my-app
+./scripts/meta-setup ./my-app
 ```
 
-If the doctor passes but things are still broken:
+If setup checks pass but things are still broken:
 
-- Check [references/gotchas.md](references/gotchas.md) (runtime issues doctor can’t detect)
+- Check [references/gotchas.md](references/gotchas.md) (runtime issues setup checks can’t detect)
 - If `meta-start` failed mid-way: [references/starting.md](references/starting.md)
 
 ## Stack

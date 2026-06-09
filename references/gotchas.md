@@ -1,6 +1,6 @@
 # Gotchas
 
-Runtime issues that `meta-doctor` can't detect. Run doctor first - if it passes and you still have problems, check here.
+Runtime issues that `meta-setup` can't detect. Run setup checks first - if they pass and you still have problems, check here.
 
 ## Simulator Issues
 
@@ -45,7 +45,7 @@ npx expo start --clear
 ./scripts/meta-run /path/to/app
 ```
 
-**className has no effect (doctor passes)**
+**className has no effect (setup checks pass)**
 - Component may not support className - wrap in View with className
 - Check component is from react-native, not a custom component missing style forwarding
 

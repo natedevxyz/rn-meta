@@ -281,4 +281,4 @@ printf '\n'
 
 echo ""
 echo "✅ Build/run finished."
-echo "   Smoke proof: capture a simulator/device screenshot or accessibility snapshot showing 'UniWind works'."
+echo "   Full rn-meta verification: use agent-device to capture a screenshot or accessibility snapshot showing 'UniWind works'."

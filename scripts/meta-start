@@ -342,7 +342,7 @@ echo "  2) Start Metro (clear cache after config changes):"
 echo "     npx expo start --clear"
 echo ""
 echo "  3) Verify the smoke proof:"
-echo "     Capture a simulator/device screenshot or accessibility snapshot showing: UniWind works"
+echo "     Use agent-device to capture a simulator/device screenshot or accessibility snapshot showing: UniWind works"
 echo ""
 if $has_ios; then
   echo "If the Simulator doesn't open:"

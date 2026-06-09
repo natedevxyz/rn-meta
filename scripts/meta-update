@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/meta-lib"
+source "$SCRIPT_DIR/lib/meta-lib.sh"
 
 TARGET="${1:-all}"
 

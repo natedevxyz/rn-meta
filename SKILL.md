@@ -38,8 +38,8 @@ Expo Router + TypeScript + Dev Client + Uniwind/Tailwind v4.
 
 ```bash
 ./scripts/meta-start <app-path-or-name> [--display-name <display-name>]
+./scripts/meta-setup <path>
 ./scripts/meta-run <path>
-npx expo start --clear
 ```
 
 `meta-start` supports both current Expo Router default layouts: root `app/` and `src/app/`. It adds CSS TypeScript declarations for `global.css` imports and patches the detected Router layout.
@@ -58,18 +58,29 @@ These scripts are agent workflow tools. Prefer running them directly when their 
 | Starting in a specific folder with a different app display name | Run `./scripts/meta-start <path> --display-name <display-name>` |
 | Build/run requested | Run `./scripts/meta-run <path>` |
 | Build/run on a specific simulator/device | Run `./scripts/meta-run <path> ios --device <UDID-or-name>` |
-| Verify setup works | Run `./scripts/meta-doctor <path>` |
-| Something broke | Run `./scripts/meta-doctor <path>` first |
-| Doctor passes but still broken | Read [references/gotchas.md](references/gotchas.md) |
+| Verify setup works | Run `./scripts/meta-setup <path>` |
+| Verify a new app is fully working | Run `./scripts/meta-setup <path>`, run `./scripts/meta-run <path>`, then use `agent-device` to prove `UniWind works` is visible |
+| Something broke in setup/config/native wiring | Run `./scripts/meta-setup <path>` first |
+| Check React/RN code quality after component, state/effect, performance, accessibility, or architecture changes | Run `./scripts/meta-doctor <path>` |
+| Check the full React/RN codebase quality instead of only changed files | Run `./scripts/meta-doctor <path> --full` |
+| Setup checks pass but runtime still broken | Read [references/gotchas.md](references/gotchas.md) |
 | Script failed mid-setup | Read [references/starting.md](references/starting.md) |
 | Need to add a package | Check [references/libraries.md](references/libraries.md) first |
 | Need to refresh companion skills | Get approval, then run `./scripts/meta-update` |
 
+## Static Quality Rule
+
+For non-trivial component, state/effect, performance, accessibility, or architecture changes, run `./scripts/meta-doctor <path>` before runtime verification. It runs TypeScript plus React Doctor against changed files by default. Use `--full` when the user asks for a full audit or when inherited project quality is part of the task. This script checks quality only; setup, Expo/RN config, native wiring, and rn-meta smoke checks belong to `meta-setup`.
+
+React Doctor is a CLI-first tool. `meta-doctor` uses `npx react-doctor@latest --diff --no-score` by default, so it may require network approval when the package is not cached. Do not run `npx react-doctor@latest install` unless the user explicitly wants React Doctor's optional CI/agent-hook setup.
+
 ## Runtime Verification Rule
+
+Treat `agent-device` as part of the core rn-meta verification workflow. It is required for full verification when a runnable simulator/device context exists. If `agent-device` is missing, get approval to run `./scripts/meta-extend device`; do not make `meta-setup` fail just because the companion skill is missing.
 
 For any non-trivial visible UI, navigation, gesture, form, or multi-step workflow change, use `agent-device` for runtime verification when a simulator/device is available or practical to start. Treat screenshots, accessibility snapshots, interaction steps, and logs as expected evidence before finalizing. Skip only for docs, static code review, dependency choice, small isolated style edits, or tasks where no runnable app/device context exists.
 
-For new rn-meta apps, runtime verification should include visual evidence that the `MetaSmoke` component is visible and styled. A successful smoke proof shows the text `UniWind works` in the app, backed by a screenshot or accessibility snapshot when device automation is available.
+For new rn-meta apps, full verification means: `meta-setup` passes, `meta-run` launches the app, and `agent-device` proves the `MetaSmoke` component is visible and styled. A successful smoke proof shows the text `UniWind works` in the app, backed by a screenshot or accessibility snapshot.
 
 ## Extensions
 
@@ -85,7 +96,7 @@ Install specialized skills as needed:
 | Advanced interactions, Reanimated, gestures, SVG, audio, worklets, JSI | `./scripts/meta-extend interactions` | Software Mansion | `software-mansion-labs/skills` | `react-native-best-practices` |
 | Real app/device automation, QA, screenshots, logs, perf evidence | `./scripts/meta-extend device` | Callstack | `callstackincubator/agent-device` | `agent-device` |
 
-Run `./scripts/meta-extend` to see all options. When a companion skill is needed and missing, get approval to run `./scripts/meta-extend <extension>` rather than only suggesting it.
+Run `./scripts/meta-extend` to see all options. When a companion skill is needed and missing, get approval to run `./scripts/meta-extend <extension>` rather than only suggesting it. The `device` extension is expected for full rn-meta runtime verification, especially after creating or changing a visible app.
 
 ## Updating Extensions
 
@@ -112,7 +123,8 @@ This skill is the small, token-efficient router for React Native development. Ke
 6. If the matching specialist is installed, delegate to that skill. Use the host's explicit skill-invocation mechanism when available; otherwise read the installed companion skill's `SKILL.md` and follow only the relevant specialist guidance. Do not load unrelated companion skills.
 7. If the matching specialist is missing, get approval to run `./scripts/meta-extend <extension>` when the user wants the capability installed.
 8. If the user asks for latest/current companion guidance, or the installed specialist appears stale, get approval and run `./scripts/meta-update`.
-9. For meaningful visible app changes, consider `agent-device` part of the done criteria when a runnable simulator/device context exists. Delegate to the installed skill before planning or running device commands. Its version-matched CLI help is authoritative for command syntax, platform limits, and setup checks.
+9. For non-trivial React/RN code changes, run `./scripts/meta-doctor <path>` before runtime verification unless the task is docs-only or a tiny isolated edit.
+10. For meaningful visible app changes, treat `agent-device` as part of the done criteria when a runnable simulator/device context exists. If it is not installed, get approval to run `./scripts/meta-extend device`. Delegate to the installed skill before planning or running device commands. Its version-matched CLI help is authoritative for command syntax, platform limits, and setup checks.
 
 **Check before delegating:** Does the skill exist in the active agent's global skills directory (`~/.claude/skills/<skill-name>` for Claude Code, `~/.codex/skills/<skill-name>` for Codex)? Also check provider/source when a source-qualified extension is available.
 
@@ -141,7 +153,7 @@ When routing to `react-native-best-practices`, choose by task and provider. Do n
 | Code structure, conventions, architecture | Vercel Labs `react-native-skills` from `vercel-labs/agent-skills` | Delegate if installed |
 | App is slow, janky, leaking memory, slow to start, or has large bundle/app size | Callstack `react-native-best-practices` from `callstackincubator/agent-skills` | Delegate if installed |
 | Reanimated, Gesture Handler, SVG, audio, worklets, JSI, ExecuTorch, rich text, advanced native interactions | Software Mansion `react-native-best-practices` from `software-mansion-labs/skills` | Delegate if installed |
-| Non-trivial visible UI, navigation, gesture, form, or multi-step workflow changes; test, dogfood, or verify a real app on simulator/device; inspect UI; tap/type/scroll; capture screenshots, video, logs, network, perf, React profiles, or `.ad` replay scripts | Callstack `agent-device` from `callstackincubator/agent-device` | Delegate if installed; use as runtime evidence before finalizing when simulator/device context exists |
+| Non-trivial visible UI, navigation, gesture, form, or multi-step workflow changes; test, dogfood, or verify a real app on simulator/device; inspect UI; tap/type/scroll; capture screenshots, video, logs, network, perf, React profiles, or `.ad` replay scripts | Callstack `agent-device` from `callstackincubator/agent-device` | Delegate if installed; if missing, get approval to run `./scripts/meta-extend device` for full verification when simulator/device context exists |
 | New project, setup, styling, Lottie animations, static diagnosis | — | Handle directly (don't delegate) |
 
 **CRITICAL:** Even when delegating, this skill's library rules ALWAYS take precedence. If an extension skill suggests an avoided library (e.g., flash-list, nativewind, redux, async-storage), you MUST override with the approved alternative from [references/libraries.md](references/libraries.md). Do not follow the extension's library suggestion.
@@ -149,8 +161,11 @@ When routing to `react-native-best-practices`, choose by task and provider. Do n
 ## Daily Commands
 
 ```bash
+./scripts/meta-setup <path>                           # rn-meta setup/config/native wiring checks
 ./scripts/meta-run <path>                             # Build + run (auto-detects iOS/Android)
 ./scripts/meta-run <path> ios --device <UDID-or-name> # Build + run on a specific iOS simulator/device
+./scripts/meta-doctor <path>                          # TypeScript + React Doctor changed-file scan
+./scripts/meta-doctor <path> --full                   # TypeScript + full React Doctor scan
 npx expo start --clear                                # Dev server + clear cache (after config changes)
 npx expo start                                        # Dev server only (JS changes, no new packages)
 ```

@@ -123,6 +123,6 @@ npx expo start --clear
 `expo-dev-client` means `npx expo start --ios` expects the development build from `meta-run` to already exist on the simulator/device.
 
 ### 13. Verify
-Run `./scripts/meta-doctor /path/to/project` - all checks should pass.
+Run `./scripts/meta-setup /path/to/project` - all checks should pass.
 
-Runtime verification should include a screenshot or accessibility snapshot showing `UniWind works`.
+Then run `./scripts/meta-run /path/to/project` and use `agent-device` to capture a screenshot or accessibility snapshot showing `UniWind works`. This runtime smoke proof is required for full rn-meta verification when a simulator/device is available.
