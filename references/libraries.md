@@ -212,15 +212,14 @@ export function BottomSheetExample() {
 ## Authentication
 | Decision | Library |
 |----------|---------|
-| ✅ Use | `@supabase/supabase-js` - Auth provider, start with anonymous users |
+| ✅ Use | `@clerk/expo` - Default auth provider |
 | ✅ Use | `expo-apple-authentication` - Native Apple Sign In |
-| ✅ Use | Supabase OAuth for Google - Web-based Google Sign In via `signInWithOAuth({ provider: 'google' })` |
-| ❌ Avoid | `@react-native-google-signin/google-signin` - Use Supabase OAuth instead |
-| ❌ Avoid | Firebase Auth - Use Supabase instead |
-| ❌ Avoid | Clerk - Use Supabase instead |
+| ❌ Avoid | `@supabase/supabase-js` for auth - Use Clerk instead |
+| ❌ Avoid | Supabase OAuth for Google - Use Clerk social auth instead |
+| ❌ Avoid | Firebase Auth - Use Clerk instead |
 
 **Auth flow:**
-- Start anonymous → link Apple/Google to existing user (no second account created)
+- Use Clerk as the identity provider and keep backend/database choices separate from auth.
 
 ## Camera
 | Decision | Library |

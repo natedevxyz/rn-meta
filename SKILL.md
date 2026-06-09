@@ -21,7 +21,7 @@ Expo Router + TypeScript + Dev Client + Uniwind/Tailwind v4.
 | `formik` / `yup` | `react-hook-form` + `zod` |
 | `lottie-react-native` | `@shopify/react-native-skia` Skottie |
 | `expo-camera` | `react-native-vision-camera` |
-| `firebase auth` / `clerk` | `@supabase/supabase-js` |
+| `firebase auth` / `supabase auth` | `@clerk/expo` |
 | `@react-navigation/bottom-tabs` | `NativeTabs` or `react-native-bottom-tabs` |
 
 ## Library Decisions

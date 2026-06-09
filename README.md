@@ -34,7 +34,7 @@ Full details (behavioral notes + code examples): [references/libraries.md](refer
 | Toasts | `sonner-native` |
 | Animations | `@shopify/react-native-skia` Skottie (Lottie), `react-native-reanimated` (gestures/transitions via `ui` extension) |
 | Bottom Sheets | `@expo/ui` `BottomSheet` |
-| Authentication | `@supabase/supabase-js` (anonymous first), `expo-apple-authentication`, Supabase OAuth (Google) |
+| Authentication | `@clerk/expo`, `expo-apple-authentication` |
 | Camera | `react-native-vision-camera` |
 | Subscriptions | `react-native-purchases` (RevenueCat) |
 | Analytics | `posthog-react-native` |
