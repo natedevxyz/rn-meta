@@ -63,7 +63,8 @@ These scripts are agent workflow tools. Prefer running them directly when their 
 | Something broke in setup/config/native wiring | Run `./scripts/meta-setup <path>` first |
 | Check React/RN code quality after component, state/effect, performance, accessibility, or architecture changes | Run `./scripts/meta-doctor <path>` |
 | Check the full React/RN codebase quality instead of only changed files | Run `./scripts/meta-doctor <path> --full` |
-| Setup checks pass but runtime still broken | Read [references/gotchas.md](references/gotchas.md) |
+| Setup checks pass but issue remains | Run `./scripts/meta-doctor <path>`, then use `agent-device` to reproduce and collect screenshot/accessibility/log evidence |
+| Setup, static quality, and device evidence do not explain the issue | Read [references/gotchas.md](references/gotchas.md) |
 | Script failed mid-setup | Read [references/starting.md](references/starting.md) |
 | Need to add a package | Check [references/libraries.md](references/libraries.md) first |
 | Need to refresh companion skills | Get approval, then run `./scripts/meta-update` |
@@ -81,6 +82,10 @@ Treat `agent-device` as part of the core rn-meta verification workflow. It is re
 For any non-trivial visible UI, navigation, gesture, form, or multi-step workflow change, use `agent-device` for runtime verification when a simulator/device is available or practical to start. Treat screenshots, accessibility snapshots, interaction steps, and logs as expected evidence before finalizing. Skip only for docs, static code review, dependency choice, small isolated style edits, or tasks where no runnable app/device context exists.
 
 For new rn-meta apps, full verification means: `meta-setup` passes, `meta-run` launches the app, and `agent-device` proves the `MetaSmoke` component is visible and styled. A successful smoke proof shows the text `UniWind works` in the app, backed by a screenshot or accessibility snapshot.
+
+## Troubleshooting Rule
+
+Use the full diagnostic ladder before treating an issue as unknown: `meta-setup` for rn-meta setup/config/native wiring, `meta-doctor` for React/RN static quality, `meta-run` to build and launch, and `agent-device` to reproduce the issue with runtime evidence. Only fall back to [references/gotchas.md](references/gotchas.md) after setup checks, static quality checks, and runtime evidence do not explain the issue.
 
 ## Extensions
 

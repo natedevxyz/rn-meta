@@ -143,13 +143,19 @@ Use `meta-update` to refresh installed companion skills from their upstream repo
 
 ## Troubleshooting
 
+Use the full diagnostic ladder before treating an issue as unknown:
+
 ```bash
 ./scripts/meta-setup ./my-app
+./scripts/meta-doctor ./my-app
+./scripts/meta-run ./my-app
 ```
 
-If setup checks pass but things are still broken:
+Then use `agent-device` to reproduce the issue on a simulator/device and collect runtime evidence: screenshot or accessibility snapshot, interaction steps, and logs. For a new app, the required smoke proof is `UniWind works` visible on screen.
 
-- Check [references/gotchas.md](references/gotchas.md) (runtime issues setup checks can’t detect)
+If the issue remains after setup, static quality, and runtime evidence:
+
+- Check [references/gotchas.md](references/gotchas.md) for known runtime and Metro issues
 - If `meta-start` failed mid-way: [references/starting.md](references/starting.md)
 
 ## Stack

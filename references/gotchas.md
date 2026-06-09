@@ -1,6 +1,6 @@
 # Gotchas
 
-Runtime issues that `meta-setup` can't detect. Run setup checks first - if they pass and you still have problems, check here.
+Known runtime issues that may remain after the full rn-meta diagnostic ladder: `meta-setup`, `meta-doctor`, `meta-run`, and `agent-device` runtime evidence. Use this file after setup checks, static quality checks, and device/simulator evidence do not explain the issue.
 
 ## Simulator Issues
 
