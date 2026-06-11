@@ -27,14 +27,14 @@ Full details (behavioral notes + code examples): [references/libraries.md](refer
 | Styling | `uniwind` |
 | Navigation | `expo-router`, `NativeTabs`, `react-native-bottom-tabs` (fallback) |
 | Lists | `@legendapp/list`, `FlatList` (small lists) |
-| State Management | `@legendapp/state@beta` + MMKV persist, React built-ins for simple local state |
-| Data Fetching | `@tanstack/react-query` + persist + `axios` |
+| State Management | `@legendapp/state@beta` for ephemeral client state, React built-ins for simple local state |
+| Data Fetching | Convex hooks: `useQuery`, `useMutation`, `useAction`, `usePaginatedQuery` |
 | Storage | `react-native-mmkv`, `expo-secure-store` (sensitive) |
 | Forms & Inputs | `react-hook-form` + `zod`, `react-native-keyboard-controller` |
 | Toasts | `sonner-native` |
 | Animations | `@shopify/react-native-skia` Skottie (Lottie), `react-native-reanimated` (gestures/transitions via `ui` extension) |
 | Bottom Sheets | `@expo/ui` `BottomSheet` |
-| Authentication | `@clerk/expo`, `expo-apple-authentication` |
+| Authentication | Better Auth on Convex with anonymous baseline; optional Apple/Google upgrade |
 | Camera | `react-native-vision-camera` |
 | Subscriptions | `react-native-purchases` (RevenueCat) |
 | Analytics | `posthog-react-native` |

@@ -15,13 +15,14 @@ Expo Router + TypeScript + Dev Client + Uniwind/Tailwind v4.
 |------------------------------|------------------|
 | `@shopify/flash-list` | `@legendapp/list` |
 | `nativewind` | `uniwind` |
-| `redux` / `@reduxjs/toolkit` / `zustand` | `@legendapp/state@beta` for app state, React built-ins for simple local state |
+| `redux` / `@reduxjs/toolkit` / `zustand` | `@legendapp/state@beta` for ephemeral client state, React built-ins for simple local state |
 | `async-storage` | `react-native-mmkv` |
-| `fetch` | `axios` |
+| `fetch` / `axios` / client HTTP APIs | Convex queries, mutations, actions, and subscriptions |
 | `formik` / `yup` | `react-hook-form` + `zod` |
 | `lottie-react-native` | `@shopify/react-native-skia` Skottie |
 | `expo-camera` | `react-native-vision-camera` |
-| `firebase auth` / `supabase auth` | `@clerk/expo` |
+| `@clerk/expo` / Firebase Auth / Supabase Auth | Better Auth anonymous baseline running as the Convex component; optional Apple/Google upgrade |
+| `@tanstack/react-query` / SWR | Convex native hooks: `useQuery`, `useMutation`, `usePaginatedQuery` |
 | `@react-navigation/bottom-tabs` | `NativeTabs` or `react-native-bottom-tabs` |
 
 ## Library Decisions
@@ -32,7 +33,17 @@ Expo Router + TypeScript + Dev Client + Uniwind/Tailwind v4.
 
 **Full list:** [references/libraries.md](references/libraries.md)
 
-**State rule of thumb:** Use `@legendapp/state@beta` for shared, persisted, derived, synced, offline-first, or performance-sensitive app state. Keep `useState`, `useReducer`, and local component state for simple one-screen values like toggles, sheet visibility, temporary input affordances, and UI-only flags that do not need sharing or persistence. Use React Query for ordinary server/cache state. When changing existing Zustand code, migrate only if that state domain is in scope.
+**State rule of thumb:** Use `@legendapp/state@beta` only for ephemeral client state and the dedicated MMKV last-known-good cache described in [references/libraries.md](references/libraries.md). Keep `useState`, `useReducer`, and local component state for simple one-screen values like toggles, sheet visibility, temporary input affordances, and UI-only flags that do not need sharing or persistence. Convex owns server data through native hooks; do not mirror server data into general app stores. When changing existing Zustand code, migrate only if that state domain is in scope.
+
+## Architecture Doctrine
+
+- **Core rule:** For app data and business workflows, the client talks only to Convex. Convex is the database, realtime sync layer, and authoritative server runtime.
+- **Sanctioned client exceptions:** RevenueCat's SDK for subscriptions, approved telemetry/notification SDKs, and direct-to-R2 media uploads using Convex-issued presigned URLs.
+- **Auth lifecycle:** Boot anonymous. Anonymous-only apps are valid. If the product needs durable account recovery or cross-device continuity, optionally upgrade through Apple or Google `idToken` sign-in, run a linking mutation that migrates guest documents, and make sign-out leave every document owned by a reachable anonymous or upgraded account.
+- **Boot sequence:** Render the MMKV last-known-good cache synchronously, ensure an anonymous or upgraded Better Auth/Convex session with `expectAuth: true`, then let live Convex subscriptions overwrite cached data.
+- **Cost rules:** Keep Convex queries narrow and paginated, and serve media from R2 rather than Convex file storage except for small private rarely served files.
+- **Portability discipline:** Put business logic in plain TypeScript modules. Convex functions are thin adapters. `lib/` must not import from Convex.
+- **State rule:** Legend State holds ephemeral client state. Server data is read through Convex hooks; the only allowed server-data mirror is the dedicated MMKV last-known-good cache used to paint cold starts until subscriptions hydrate.
 
 ## New Project
 
